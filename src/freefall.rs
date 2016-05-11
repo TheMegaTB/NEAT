@@ -5,10 +5,12 @@ use rand::{Rng, self};
 pub fn ff(nn: &NeuralNetwork, user_friendly: bool) -> usize {
     let name = "Karsten";
 
+    let mut rng_thread = rand::thread_rng();
+
     let terminal_velocity = 56.0; // Maximum velocity
     let acceleration = 9.80665; // Gravity     <-|
-    //let deceleration = -8.9408; // Chute       <-| m/s^2
-    let deceleration = -(rand::thread_rng().next_f64() * 9.0 + 1.0);
+    // let deceleration = -8.9408; // Chute       <-| m/s^2
+    let deceleration = -((rng_thread.next_f64() * 9.0 + 1.0).abs());
     let weight = 75.0; //kg
     let chute_speed = 5.1815; // Maximum speed when opened
     let interval = 0.1; // interval of checks. May not be bigger than 1!
@@ -18,7 +20,7 @@ pub fn ff(nn: &NeuralNetwork, user_friendly: bool) -> usize {
     let mut velocity = 0.0;
     let mut time = 0.0;
     let mut chute_opened = false;
-    let mut chute_pulled_at = 1001.0;
+    let mut chute_pulled_at = height+1.0;
 
     while height > 0.0 {
         velocity += if !(chute_opened) { acceleration * interval } else { deceleration * interval };
@@ -41,6 +43,7 @@ pub fn ff(nn: &NeuralNetwork, user_friendly: bool) -> usize {
 
     let kinetic_energy = (1.0 / 2.0) * velocity * weight;
     let force = kinetic_energy / crater_depth;
+    let perfect_height = terminal_velocity*terminal_velocity / (2.0*(-deceleration));
     if user_friendly {
         if force > 85.0 {
             println!("{name} faceplanted into the ground after {:.*} seconds creating a {} cm deep crater whilst experiencing a force of {:.*} N.", 0, time, crater_depth, 0, force, name = name);
@@ -59,10 +62,7 @@ pub fn ff(nn: &NeuralNetwork, user_friendly: bool) -> usize {
             println!("WHUUUT?! {name} managed to defy the laws of physiz! He actually experienced {:.*} N of force!", 0, force, name = name);
             println!("He just hit the ground and got even more magical energy pushing him deeper into the ground...");
         }
+        println!("ph: {}, dc: {}", perfect_height, deceleration);
     }
-
-    let perfect_height = terminal_velocity*terminal_velocity / (2.0*(-deceleration));
-    //println!("ph: {}, dc: {}", perfect_height, deceleration);
-
     if force <= 20.0 { chute_pulled_at as usize - perfect_height as usize } else { 1001 }
 }

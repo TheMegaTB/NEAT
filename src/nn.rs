@@ -9,7 +9,7 @@ pub const OUTPUT_LENGTH: usize = 576;
 const GRADIENT: Float = 1.0;
 
 #[derive(Debug)]
-enum Error {
+pub enum Error {
     InputLengthMismatch
 }
 
@@ -100,10 +100,10 @@ impl NeuralNetwork {
         for layer in self.hidden.iter_mut() {
             for neuron in layer.iter_mut() {
                 if rng.next_f32() < amount {
-                    neuron.bias += (rng.next_f64() * 2.0 - 1.0) * strength as f64;
-                    if neuron.bias > 100.0 {
+                    neuron.bias += (rng.next_f64() * 2.0 - 1.0) * strength as f64 * 0.001;
+                    if neuron.bias > 1.0 {
                         neuron.bias = 100.0;
-                    } else if neuron.bias < -100.0 {
+                    } else if neuron.bias < -1.0 {
                         neuron.bias = -100.0;
                     }
                 }

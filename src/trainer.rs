@@ -40,12 +40,12 @@ impl TrainerConfig {
 
     pub fn new() -> TrainerConfig {
         TrainerConfig {
-            generation_size: 800,
-            survivor_count: 100,
-            games_per_client: 20,
-            mutation_amount: 0.25, //Percentage
+            generation_size: 100, //1600
+            survivor_count: 20, //200
+            games_per_client: 75,
+            mutation_amount: 0.50, //Percentage
             mutation_strength: 0.129,
-            structure: vec![3, 5, 5, 5, 3, 2, 1]
+            structure: vec![3, 60, 100, 100, 60, 20, 1]
         }
     }
 
