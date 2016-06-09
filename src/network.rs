@@ -3,6 +3,9 @@ use Node;
 use Gene;
 
 /// Structure representing a network or lifeform inside the population
+/// The nodes with the NIDs from 0 to x represent the inputs where x is the number of inputs
+/// The nodes with the NIDs from nodes.len()-x to nodes.len() represent the outputs where x is the number of outputs
+#[derive(Debug)]
 pub struct Network {
     /// The genome containing the links between nodes
     genome: Vec<Gene>,

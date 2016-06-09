@@ -6,6 +6,7 @@ use Float;
 use Link;
 
 /// Struct that represents a gene which in turn represents a connection/link inside a network
+#[derive(Debug)]
 pub struct Gene {
     /// The unique ID of a gene. This is necessary for crossover. See GID for more information
     id: GID,
