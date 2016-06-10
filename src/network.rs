@@ -164,3 +164,11 @@ fn short_term_memory() {
     let _ = net.evaluate(vec![0.5]);
     assert!(net.nodes[0].inputs.len() == 1);
 }
+
+#[test]
+fn recursive_evaluation() {
+    let mut net = Network::new_empty(1, 1);
+    let res = net.nodes[1].evaluate();
+    net.nodes[1].reset();
+    assert!(res != net.evaluate(vec![0.5]).unwrap()[0]);
+}
