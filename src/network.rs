@@ -156,3 +156,11 @@ fn dependency() {
     let net = Network::new_empty(5, 1);
     assert_eq!(net.get_node_dependencies(5), (Vec::new(), vec![0, 1, 2, 3, 4]));
 }
+
+#[test]
+fn short_term_memory() {
+    let mut net = Network::new_empty(1, 1);
+    net.genome.push(Gene::new_random(0, 0, false));
+    let _ = net.evaluate(vec![0.5]);
+    assert!(net.nodes[0].inputs.len() == 1);
+}
