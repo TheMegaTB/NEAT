@@ -92,18 +92,16 @@ impl Network {
             }
         }
 
-        let (out, evaluated);
-        {
+        let (out, evaluated) = {
             let node = self.nodes.get_mut(node_id).expect("Node disappeared!");
-            evaluated = !node.executed;
 
             // Either evaluate the node or grab its current output value (-> dont re-evaluate and waste resources)
-            out = if node.executed {
+            (if node.executed {
                 node.output
             } else {
                 node.evaluate()
-            };
-        }
+            }, !node.executed)
+        };
 
         // Only 'execute' recurring connections once (when the node got evaluated)
         if evaluated {
