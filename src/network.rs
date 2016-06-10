@@ -1,63 +1,159 @@
-use std::collections::HashMap;
-
 use GID;
 use NID;
 use Node;
 use Gene;
 use Float;
+use Link;
+
+#[derive(Debug)]
+pub enum EvaluationError {
+    InputSizeMismatch,
+    Unknown
+}
+
+type Genome = Vec<Gene>;
 
 /// Structure representing a network or lifeform inside the population
+///
 /// The nodes with the NIDs from 0 to x represent the inputs where x is the number of inputs
 /// The nodes with the NIDs from nodes.len()-x to nodes.len() represent the outputs where x is the number of outputs
 #[derive(Debug)]
 pub struct Network {
     /// HashMap that contains the genes and their respective GIDs
-    genome: HashMap<GID, Gene>,
+    genome: Genome,
     /// Nodes of the network that are connected via links defined in the genome
+    /// The index defines the NID (it will never change as there are only nodes added, never removed)
     pub nodes: Vec<Node>,
-    /// List of node IDs that are the outputs of the network
-    outputs: Vec<NID>
+    /// Amount of nodes starting from zero that are the inputs of the network
+    inputs: usize,
+    /// List of NIDs that are the outputs of the network
+    outputs: Vec<NID>,
 }
 
 impl Network {
-    pub fn new_empty(inputs: usize, outputs: usize, gid_counter: &mut GID) -> Network {
+    pub fn new_empty(inputs: usize, outputs: usize) -> Network {
         Network {
             genome: (0..inputs).flat_map(|i| {
                 (inputs..inputs+outputs).map(|o| {
-                    Gene::new_random(gid_counter, i, o, false)
+                    Gene::new_random(i, o, false)
                 }).collect::<Vec<_>>()
             }).collect(),
-            nodes: (0..inputs+outputs).map(|i| {
-                Node::new(i)
-            }).collect(),
+            nodes: Node::multiple_new(inputs+outputs),
+            inputs: inputs,
             outputs: (inputs..inputs+outputs).collect()
+        }
+    }
+
+    /// Function to list all dependencies that are required for a node.
+    ///
+    /// It returns two vectors where the first one consist of the GIDs of recurring connections (returning to the node itself)
+    /// The second vector is a list of GIDs that are non-recurring connections
+    fn get_node_dependencies(&self, node: NID) -> (Vec<GID>, Vec<GID>) {
+        self.genome.iter().enumerate().fold((Vec::new(), Vec::new()), |mut acc, (i, gene)| {
+            if gene.link.1 == node && !gene.disabled  && !(gene.link.0 == gene.link.1) {
+                acc.1.push(i);
+            } else if gene.link.1 == node && !gene.disabled && gene.link.0 == gene.link.1 {
+                acc.0.push(i);
+            }
+            acc
+        })
+    }
+
+    /// Execute a gene => grab the output of the src, evaluate the gene and add the resulting value to the target nodes input
+    fn process_gene(&mut self, link: Link, node_id: NID, gene_id: GID) {
+        if link.1 != node_id { panic!("Link target does not match current node ({}): {} -> {}", node_id, link.0, link.1); }
+        let output = self.nodes.get(link.0).expect("Node disappeared!").output;
+        self.nodes.get_mut(link.1).expect("Node disappeared!").inputs.push(
+            self.genome.get(gene_id).expect("Gene disappeared!").evaluate(output)
+        );
+    }
+
+    /// Calculate a node and all its dependencies
+    fn recursive_calc_node(&mut self, node_id: NID) -> Float {
+        // Get the IDs of all connections this node depends on
+        let dependencies = self.get_node_dependencies(node_id);
+
+        // Check if there are any dependencies and prevent unnecessary calculations
+        if dependencies.1.len() > 0 {
+            // Get all connections that this node depends on
+            // TODO: Check recurring connections and set them but not depend on them
+            let dependend_links = dependencies.1.iter().map(|gene_id| {
+                self.genome.get(*gene_id).expect("Gene disappeared!").link
+            }).collect::<Vec<_>>();
+
+            // Calculate the values of the nodes that are on the other end of the connection
+            for link in dependend_links.iter() {
+                self.recursive_calc_node(link.0);
+            }
+
+            // Push the outputs through the genes (apply weights) and insert them into the target/current node
+            for (gene_id, link) in dependencies.1.iter().zip(dependend_links.iter()) {
+                self.process_gene(*link, node_id, *gene_id);
+            }
+        }
+
+        let (out, evaluated);
+        {
+            let node = self.nodes.get_mut(node_id).expect("Node disappeared!");
+            evaluated = !node.executed;
+
+            // Either evaluate the node or grab its current output value (-> dont re-evaluate and waste resources)
+            out = if node.executed {
+                node.output
+            } else {
+                node.evaluate()
+            };
+        }
+
+        // Only 'execute' recurring connections once (when the node got evaluated)
+        if evaluated {
+            for recurring_gene_id in dependencies.0.iter() {
+                let link = self.genome.get(*recurring_gene_id).expect("Gene disappeared!").link;
+                self.process_gene(link, node_id, *recurring_gene_id);
+            }
+        }
+
+        out
+    }
+
+    /// Evaluate the network with some input data.
+    ///
+    /// This might eventually leave some remaining recurrent data in the network behind for the next evaluation.
+    pub fn evaluate(&mut self, inputs: Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
+        if !(inputs.len() == self.inputs) {
+            return Err(EvaluationError::InputSizeMismatch);
+        }
+
+        // Fill in all the inputs
+        for input_id in 0..self.inputs {
+            let input_node = self.nodes.get_mut(input_id).expect("Input node disappeared!");
+            input_node.inputs.push(inputs[input_id])
+        }
+
+        // Recursively calculate the output nodes and all their dependencies
+        let outputs = self.outputs.clone(); // This assumes that outputs is NEVER modified whilst this function runs
+        let output_values = outputs.iter().map(|output_id| {
+            self.recursive_calc_node(*output_id)
+        }).collect();
+
+        for node in self.nodes.iter_mut() {
+            node.reset();
+        }
+
+        Ok(output_values)
+    }
+
+    /// Reset the network fully by removing all remaining recurrent data and resetting all states.
+    pub fn reset(&mut self) {
+        for node in self.nodes.iter_mut() {
+            node.inputs.clear();
+            node.reset();
         }
     }
 }
 
-fn steep_sigmoid(x: Float) -> Float {
-    1.0 / ( 1.0 + (-4.9 * x).exp())
-}
-
 #[test]
-fn sigmoid() {
-    assert_eq!(steep_sigmoid(0.25), 0.77294225)
-}
-
-#[test]
-fn gid_increases() {
-    let mut gid_counter = 0;
-    Network::new_empty(5, 5, &mut gid_counter);
-    assert!(0 != gid_counter);
-    assert_eq!(gid_counter, 25);
-}
-
-#[test]
-fn nid_is_unique() {
-    let mut gid_counter = 0;
-    let mut nids = Vec::with_capacity(10);
-    for node in Network::new_empty(5, 5, &mut gid_counter).nodes {
-        assert!(!nids.contains(&node.id));
-        nids.push(node.id);
-    }
+fn dependency() {
+    let net = Network::new_empty(5, 1);
+    assert_eq!(net.get_node_dependencies(5), (Vec::new(), vec![0, 1, 2, 3, 4]));
 }

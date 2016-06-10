@@ -21,7 +21,8 @@ pub use population::Population;
 
 fn main() {
     println!("Hello world!");
-    println!("{:?}", Network::new_empty(1, 3, &mut 0));
+    let mut net = Network::new_empty(3, 2);
+    println!("{:?}", net.evaluate(vec![0.5, 0.5, 0.5]));
 }
 
 // IDEA:
@@ -29,6 +30,6 @@ fn main() {
 // Each node that is connected to a output gets evaluated
 // To evaluate those nodes every connected node needs to be evaluated and so on
 // A node may only be evaluated once to reduce unnecessary calculations
-// This goes on until all nodes are evaluated
+// This goes on recursively until all nodes are evaluated
 // If there is a link to a node itself a unresolvable cycle dependency is created and needs to be caught
 // by ignoring it as a dependency but using it when writing the output (e.g. write the output back into the input for next round)
