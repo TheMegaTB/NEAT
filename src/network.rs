@@ -55,6 +55,15 @@ impl Network {
             } else if gene.link.1 == node && !gene.disabled && gene.link.0 == gene.link.1 {
                 acc.0.push(i);
             }
+            if gene.link.1 == node && !gene.disabled {
+                if gene.link.0 == gene.link.1 {
+                    acc.0.push(i);
+                }
+                else {
+                    acc.1.push(i);
+                }
+            }
+
             acc
         })
     }
@@ -83,7 +92,7 @@ impl Network {
 
             // Calculate the values of the nodes that are on the other end of the connection
             for link in dependend_links.iter() {
-                self.recursive_calc_node(link.0);
+                self.recursive_calc_node(link.0); //TODO prevent infinitie loop (3->4 and 4->3)
             }
 
             // Push the outputs through the genes (apply weights) and insert them into the target/current node
