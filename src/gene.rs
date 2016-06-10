@@ -7,8 +7,6 @@ use Link;
 /// Struct that represents a gene which in turn represents a connection/link inside a network
 #[derive(Debug)]
 pub struct Gene {
-    // The unique ID of a gene. This is necessary for crossover. See GID for more information
-    // id: GID, => now stored in the network genome hashmap rather than the gene itself
     /// Whether or not this gene has been disabled
     pub disabled: bool,
     /// The multiplier that is applied for data passing through this link
