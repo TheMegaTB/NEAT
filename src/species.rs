@@ -1,9 +1,9 @@
-use Network;
+use TrainingNetwork;
 
 /// A niche that contains multiple networks to protect changes that are less performant at first
 #[derive(Debug)]
 pub struct Species {
-    networks: Vec<Network>
+    networks: Vec<TrainingNetwork>
 }
 
 impl Species {
@@ -13,7 +13,7 @@ impl Species {
         }
     }
 
-    pub fn from(networks: Vec<Network>) -> Species {
+    pub fn from(networks: Vec<TrainingNetwork>) -> Species {
         Species {
             networks: networks
         }

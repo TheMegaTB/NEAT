@@ -1,14 +1,13 @@
 [package]
-name = "neat_trainer"
+name = "neatwork"
 version = "0.1.0"
 authors = ["Til Blechschmidt <til@blechschmidt.de>", "Noah Peeters <noah.peeters@icloud.com>"]
+
+[features]
+default = ["double_precision"]
+double_precision = []
+single_precision = []
 
 [dependencies]
 rand = "0.3.0"
 rustc-serialize = "0.3"
-num_cpus = "0.2.11"
-pbr = "0.0.5"
-
-[dependencies.neatwork]
-path = "network"
-version = "0.1.0"

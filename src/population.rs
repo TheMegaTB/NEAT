@@ -1,5 +1,6 @@
+use neatwork::Network;
 use Species;
-use Network;
+use TrainingNetwork;
 
 /// The whole population of all lifeforms/networks/species
 #[derive(Debug)]
@@ -12,7 +13,7 @@ impl Population {
         Population {
             species: vec![Species::from(
                 (0..size).map(|_| {
-                    Network::new_empty(inputs, outputs)
+                    TrainingNetwork::new(Network::new_empty(inputs, outputs))
                 }).collect()
             )]
         }

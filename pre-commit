@@ -1,1 +1,3 @@
 /usr/bin/cargo test
+cd network
+/usr/bin/cargo test
