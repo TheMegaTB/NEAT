@@ -1,12 +1,18 @@
 use rand::{thread_rng, Rng};
 use rustc_serialize::json;
 
-use GID;
-use NID;
-use Node;
-use Gene;
-use Float;
-use Link;
+use {
+    NETWORK_MUT_ADD_GENE,
+    NETWORK_MUT_ADD_NODE,
+    NETWORK_MUT_MUTATE_GENE,
+    NETWORK_MUT_CROSSOVER,
+    GID,
+    NID,
+    Node,
+    Gene,
+    Float,
+    Link
+};
 
 #[derive(Debug)]
 pub enum EvaluationError {
@@ -26,7 +32,7 @@ type Genome = Vec<Gene>;
 ///
 /// The nodes with the NIDs from 0 to x represent the inputs where x is the number of inputs
 /// The nodes with the NIDs from nodes.len()-x to nodes.len() represent the outputs where x is the number of outputs
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Debug, RustcDecodable, RustcEncodable, Clone, PartialEq)]
 pub struct Network {
     /// HashMap that contains the genes and their respective GIDs
     genome: Genome,
@@ -80,7 +86,7 @@ impl Network {
         };
     }
 
-    fn add_node_in_gene(&mut self, gene_id: GID) -> Result<(), MutationError>{
+    pub fn add_node_in_gene(&mut self, gene_id: GID) -> Result<(), MutationError>{
         let (link, weight) = match self.genome.get_mut(gene_id) {
             Some(gene) => (gene.link, gene.weight),
             None => { return Err(MutationError::GeneNotExistent) }
@@ -97,11 +103,45 @@ impl Network {
         Ok(())
     }
 
-    pub fn crossover(&self, other: &Network) -> Result<Network, MutationError> {
+    pub fn crossover(&self, other: &Network, self_is_fitter: bool) -> Result<Network, MutationError> {
         if self.inputs != other.inputs || self.outputs.len() != other.outputs.len() {
             return Err(MutationError::IOSizeMismatch)
         }
-        unimplemented!()
+
+        let (mut child, other) = if self_is_fitter { (self.clone(), other) } else { (other.clone(), self) };
+
+        for gene in child.genome.iter_mut() {
+            match other.genome.iter().find(|other_gene| other_gene == &gene) {
+                Some(other_gene) => {
+                    gene.merge(other_gene)
+                },
+                None => {}
+            }
+        }
+
+        Ok(child)
+    }
+
+    pub fn mutate(&mut self, other: &Network, self_is_fitter: bool) -> Option<Network> {
+        let mutation_index = thread_rng().gen::<Float>();
+        println!("{:?}", mutation_index);
+        if mutation_index < NETWORK_MUT_ADD_GENE {
+            let src = thread_rng().gen_range(0, self.nodes.len());
+            let dest = thread_rng().gen_range(0, self.nodes.len());
+            self.add_connection(src, dest, None);
+        } else if mutation_index < NETWORK_MUT_ADD_GENE + NETWORK_MUT_ADD_NODE {
+            let gene_id = thread_rng().gen_range(0, self.genome.len());
+            self.add_node_in_gene(gene_id).expect("Mutation: Gene vec broken!");
+        } else if mutation_index < NETWORK_MUT_ADD_GENE + NETWORK_MUT_ADD_NODE + NETWORK_MUT_MUTATE_GENE {
+            let gene_id = thread_rng().gen_range(0, self.genome.len());
+            self.genome[gene_id].mutate();
+        } else {
+            // TODO mutate node
+        }
+
+        if thread_rng().gen::<Float>() < NETWORK_MUT_CROSSOVER {
+            Some(self.crossover(other, self_is_fitter).expect("Mutation: missmatching io size of network"))
+        } else { None }
     }
 
     /// Function to list all dependencies that are required for a node.
@@ -237,14 +277,14 @@ fn add_node() {
 fn crossover_input_size_mismatch() {
     let net1 = Network::new_empty(5, 1);
     let net2 = Network::new_empty(6, 1);
-    assert!(net1.crossover(&net2).is_err());
+    assert!(net1.crossover(&net2, false).is_err());
 }
 
 #[test]
 fn crossover_output_size_mismatch() {
     let net1 = Network::new_empty(5, 1);
     let net2 = Network::new_empty(5, 2);
-    assert!(net1.crossover(&net2).is_err());
+    assert!(net1.crossover(&net2, false).is_err());
 }
 
 #[test]

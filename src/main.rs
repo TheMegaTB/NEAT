@@ -22,9 +22,12 @@ pub use population::Population;
 
 fn main() {
     println!("Hello world!");
-    let mut net = Network::new_empty(3, 2);
-    println!("{:?}", net.evaluate(&vec![0.5, 0.5, 0.5]));
-    net.crossover(&net).unwrap();
+    let mut net = Network::new_empty(1, 1);
+    println!("{:?}", net.evaluate(&vec![0.5]));
+    net.add_node_in_gene(0).unwrap();
+    println!("{:?}", net);
+    // println!("");
+    // println!("{:?}", net.crossover(&Network::new_empty(1, 1), true).unwrap());
 }
 
 // IDEA:
