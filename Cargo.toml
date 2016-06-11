@@ -6,6 +6,7 @@ authors = ["Til Blechschmidt <til@blechschmidt.de>"]
 [features]
 default = ["double_precision"]
 double_precision = []
+single_precision = []
 
 [dependencies]
 rand = "0.3.0"
