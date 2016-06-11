@@ -54,7 +54,11 @@ fn steep_sigmoid(x: Float) -> Float {
 
 #[test]
 fn sigmoid() {
-    assert_eq!(steep_sigmoid(0.25), 0.77294225)
+    if cfg!(feature = "single_precision") {
+        assert_eq!(steep_sigmoid(0.25), 0.77294225)
+    } else if cfg!(feature = "double_precision") {
+        assert_eq!(steep_sigmoid(0.25), 0.7729422593967386);
+    }
 }
 
 #[test]

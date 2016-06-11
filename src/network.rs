@@ -140,7 +140,7 @@ impl Network {
     /// Evaluate the network with some input data.
     ///
     /// This might eventually leave some remaining recurrent data in the network behind for the next evaluation.
-    pub fn evaluate(&mut self, inputs: Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
+    pub fn evaluate(&mut self, inputs: &Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
         if !(inputs.len() == self.inputs) {
             return Err(EvaluationError::InputSizeMismatch);
         }
@@ -185,8 +185,8 @@ fn add_node() {
     let gene_count = net.genome.len();
     let node_count = net.nodes.len();
 
-    net.add_node(0); // Add a new node between node 0 (first input) and 5 (output)
-    
+    net.add_node(0).unwrap(); // Add a new node between node 0 (first input) and 5 (output)
+
     assert_eq!(net.genome.len(), gene_count+2);
     assert_eq!(net.nodes.len(), node_count+1);
     assert!(net.nodes.get(6).is_some());
