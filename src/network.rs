@@ -215,6 +215,11 @@ impl Network {
 }
 
 #[test]
+fn failing_test() {
+    panic!()
+}
+
+#[test]
 fn dependency() {
     let net = Network::new_empty(5, 1);
     assert_eq!(net.get_node_dependencies(5), (Vec::new(), vec![0, 1, 2, 3, 4]));
