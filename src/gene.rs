@@ -45,6 +45,10 @@ impl Gene {
         self.disabled = true;
     }
 
+    pub fn enable(&mut self) {
+        self.disabled = false;
+    }
+
     pub fn evaluate(&self, input: Float) -> Float {
         input * self.weight
     }

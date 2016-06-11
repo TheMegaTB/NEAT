@@ -68,12 +68,16 @@ impl Network {
 
         let new_gene = Gene::with_weight(src, dest, false, weight);
 
-        if !self.genome.contains(&new_gene) {
+        // TODO: Use PartialEq instead of manually comparing the two genes (doesnt work because one is borrowed the other one not)
+        if match self.genome.iter_mut().find(|gene| gene.link.0 == new_gene.link.0 && gene.link.1 == new_gene.link.1) {
+            Some(gene) => {
+                gene.enable();
+                false
+            },
+            None => true
+        } {
             self.genome.push(new_gene);
-        } else {
-            // TODO: Enable the already existing gene
-            // Which would require to find it...contains doesn't provide info on that sadly
-        }
+        };
     }
 
     fn add_node_in_gene(&mut self, gene_id: GID) -> Result<(), MutationError>{
@@ -234,6 +238,15 @@ fn dedup_genome() {
     assert_eq!(net.genome.len(), genome_length+1);
     net.add_connection(2, 2, None);
     assert_eq!(net.genome.len(), genome_length+1);
+}
+
+#[test]
+fn reenabling_gene() {
+    let mut net = Network::new_empty(5, 1);
+    let link = net.genome[0].link;
+    net.genome[0].disable();
+    net.add_connection(link.0, link.1, None);
+    assert!(!net.genome[0].disabled);
 }
 
 #[test]
