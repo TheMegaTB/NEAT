@@ -11,6 +11,11 @@ pub enum EvaluationError {
     Unknown
 }
 
+#[derive(Debug)]
+pub enum MutationError {
+    GeneNotExistent
+}
+
 type Genome = Vec<Gene>;
 
 /// Structure representing a network or lifeform inside the population
@@ -35,13 +40,30 @@ impl Network {
         Network {
             genome: (0..inputs).flat_map(|i| {
                 (inputs..inputs+outputs).map(|o| {
-                    Gene::new_random(i, o, false)
+                    Gene::random(i, o, false)
                 }).collect::<Vec<_>>()
             }).collect(),
             nodes: Node::multiple_new(inputs+outputs),
             inputs: inputs,
             outputs: (inputs..inputs+outputs).collect()
         }
+    }
+
+    fn add_node(&mut self, gene_id: GID) -> Result<(), MutationError>{
+        let (link, weight) = match self.genome.get_mut(gene_id) {
+            Some(gene) => (gene.link, gene.weight),
+            None => { return Err(MutationError::GeneNotExistent) }
+        };
+
+        // Add link
+        let node_id = self.nodes.len();
+        self.nodes.push(Node::new());
+        // Add node
+        self.genome.push(Gene::with_weight(link.0, node_id, false, 1.0));
+        self.genome.push(Gene::with_weight(node_id, link.1, false, weight));
+
+        self.genome[gene_id].disable(); // No match required as the match at the beginning would have returned if the gene doesn't exist
+        Ok(())
     }
 
     /// Function to list all dependencies that are required for a node.
@@ -76,7 +98,6 @@ impl Network {
         // Check if there are any dependencies and prevent unnecessary calculations
         if dependencies.1.len() > 0 {
             // Get all connections that this node depends on
-            // TODO: Check recurring connections and set them but not depend on them
             let dependend_links = dependencies.1.iter().map(|gene_id| {
                 self.genome.get(*gene_id).expect("Gene disappeared!").link
             }).collect::<Vec<_>>();
@@ -156,4 +177,17 @@ impl Network {
 fn dependency() {
     let net = Network::new_empty(5, 1);
     assert_eq!(net.get_node_dependencies(5), (Vec::new(), vec![0, 1, 2, 3, 4]));
+}
+
+#[test]
+fn add_node() {
+    let mut net = Network::new_empty(5, 1);
+    let gene_count = net.genome.len();
+    let node_count = net.nodes.len();
+
+    net.add_node(0); // Add a new node between node 0 (first input) and 5 (output)
+    
+    assert_eq!(net.genome.len(), gene_count+2);
+    assert_eq!(net.nodes.len(), node_count+1);
+    assert!(net.nodes.get(6).is_some());
 }

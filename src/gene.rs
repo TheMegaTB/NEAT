@@ -10,18 +10,30 @@ pub struct Gene {
     /// Whether or not this gene has been disabled
     pub disabled: bool,
     /// The multiplier that is applied for data passing through this link
-    weight: Float,
+    pub weight: Float,
     /// Endpoints of the link
     pub link: Link
 }
 
 impl Gene {
-    pub fn new_random(src: NID, dest: NID, disabled: bool) -> Gene {
+    pub fn random(src: NID, dest: NID, disabled: bool) -> Gene {
         Gene {
             disabled: disabled,
             weight: thread_rng().gen::<Float>()*2.0 - 1.0,  // TODO: Improve this w/ a thread wide generator (aka species wide)
             link: (src, dest)
         }
+    }
+
+    pub fn with_weight(src: NID, dest: NID, disabled: bool, weight: Float) -> Gene {
+        Gene {
+            disabled: disabled,
+            weight: weight,
+            link: (src, dest)
+        }
+    }
+
+    pub fn disable(&mut self) {
+        self.disabled = true;
     }
 
     pub fn evaluate(&self, input: Float) -> Float {
