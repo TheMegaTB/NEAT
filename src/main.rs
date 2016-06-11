@@ -24,7 +24,7 @@ fn main() {
     println!("Hello world!");
     let mut net = Network::new_empty(3, 2);
     println!("{:?}", net.evaluate(&vec![0.5, 0.5, 0.5]));
-    net.crossover(&net);
+    net.crossover(&net).unwrap();
 }
 
 // IDEA:

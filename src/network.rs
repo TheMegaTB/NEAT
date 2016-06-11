@@ -16,7 +16,8 @@ pub enum EvaluationError {
 
 #[derive(Debug)]
 pub enum MutationError {
-    GeneNotExistent
+    GeneNotExistent,
+    IOSizeMismatch
 }
 
 type Genome = Vec<Gene>;
@@ -97,7 +98,10 @@ impl Network {
         Ok(())
     }
 
-    pub fn crossover(&self, other: &Network) -> Network {
+    pub fn crossover(&self, other: &Network) -> Result<Network, MutationError> {
+        if self.inputs != other.inputs || self.outputs.len() != other.outputs.len() {
+            return Err(MutationError::IOSizeMismatch)
+        }
         unimplemented!()
     }
 
@@ -228,6 +232,20 @@ fn add_node() {
     assert_eq!(net.genome.len(), gene_count+2);
     assert_eq!(net.nodes.len(), node_count+1);
     assert!(net.nodes.get(6).is_some());
+}
+
+#[test]
+fn crossover_input_size_mismatch() {
+    let net1 = Network::new_empty(5, 1);
+    let net2 = Network::new_empty(6, 1);
+    assert!(net1.crossover(&net2).is_err());
+}
+
+#[test]
+fn crossover_output_size_mismatch() {
+    let net1 = Network::new_empty(5, 1);
+    let net2 = Network::new_empty(5, 2);
+    assert!(net1.crossover(&net2).is_err());
 }
 
 #[test]
