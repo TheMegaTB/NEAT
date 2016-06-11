@@ -21,5 +21,3 @@ Cargo.lock
 
 .gpns.tmp
 best.nn
-
-!.git/hooks/pre-commit
