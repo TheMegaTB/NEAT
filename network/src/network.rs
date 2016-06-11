@@ -124,7 +124,6 @@ impl Network {
 
     pub fn mutate(&mut self, other: &Network, self_is_fitter: bool) -> Option<Network> {
         let mutation_index = thread_rng().gen::<Float>();
-        println!("{:?}", mutation_index);
         if mutation_index < NETWORK_MUT_ADD_GENE {
             let src = thread_rng().gen_range(0, self.nodes.len());
             let dest = thread_rng().gen_range(0, self.nodes.len());
@@ -185,7 +184,7 @@ impl Network {
 
             // Calculate the values of the nodes that are on the other end of the connection
             for link in dependend_links.iter() {
-                self.recursive_calc_node(link.0); //TODO prevent infinitie loop (3->4 and 4->3)
+                self.recursive_calc_node(link.0); //TODO prevent infinite loop (3->4 and 4->3)
             }
 
             // Push the outputs through the genes (apply weights) and insert them into the target/current node

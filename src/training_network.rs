@@ -1,10 +1,10 @@
 use neatwork::{Float, EvaluationError, Network};
 use Score;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TrainingNetwork {
-    network: Network,
-    score: Option<Score>
+    pub network: Network,
+    pub score: Option<Score>
 }
 
 impl TrainingNetwork {

@@ -5,7 +5,7 @@ use TrainingNetwork;
 /// The whole population of all lifeforms/networks/species
 #[derive(Debug)]
 pub struct Population {
-    species: Vec<Species>
+    pub species: Vec<Species>
 }
 
 impl Population {
