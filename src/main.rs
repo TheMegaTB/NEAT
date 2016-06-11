@@ -22,7 +22,7 @@ pub use population::Population;
 fn main() {
     println!("Hello world!");
     let mut net = Network::new_empty(3, 2);
-    println!("{:?}", net.evaluate(vec![0.5, 0.5, 0.5]));
+    println!("{:?}", net.evaluate(&vec![0.5, 0.5, 0.5]));
 }
 
 // IDEA:

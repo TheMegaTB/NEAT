@@ -3,6 +3,9 @@
 /// = f32 for single, = f64 for double precision mode
 /// Even though it theoretically enhances precision it shouldn't make the training faster/more precise.
 /// In reality it makes it slower because it needs to calculate with more data
+#[cfg(feature = "double_precision")]
+pub type Float = f64;
+#[cfg(feature = "single_precision")]
 pub type Float = f32;
 
 /// ID for identifying a genome uniquely across the whole population

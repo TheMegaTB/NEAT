@@ -3,6 +3,10 @@ name = "neural_network"
 version = "0.1.0"
 authors = ["Til Blechschmidt <til@blechschmidt.de>"]
 
+[features]
+default = ["double_precision"]
+double_precision = []
+
 [dependencies]
 rand = "0.3.0"
 rustc-serialize = "0.3"
