@@ -72,11 +72,14 @@ impl Network {
     /// The second vector is a list of GIDs that are non-recurring connections
     fn get_node_dependencies(&self, node: NID) -> (Vec<GID>, Vec<GID>) {
         self.genome.iter().enumerate().fold((Vec::new(), Vec::new()), |mut acc, (i, gene)| {
-            if gene.link.1 == node && !gene.disabled  && !(gene.link.0 == gene.link.1) {
-                acc.1.push(i);
-            } else if gene.link.1 == node && !gene.disabled && gene.link.0 == gene.link.1 {
-                acc.0.push(i);
+            if gene.link.1 == node && !gene.disabled {
+                if gene.link.0 == gene.link.1 {
+                    acc.0.push(i);
+                } else {
+                    acc.1.push(i);
+                }
             }
+
             acc
         })
     }
@@ -104,7 +107,7 @@ impl Network {
 
             // Calculate the values of the nodes that are on the other end of the connection
             for link in dependend_links.iter() {
-                self.recursive_calc_node(link.0);
+                self.recursive_calc_node(link.0); //TODO prevent infinitie loop (3->4 and 4->3)
             }
 
             // Push the outputs through the genes (apply weights) and insert them into the target/current node
@@ -113,18 +116,17 @@ impl Network {
             }
         }
 
-        let (out, evaluated);
-        {
+        let (evaluated, out) = {
             let node = self.nodes.get_mut(node_id).expect("Node disappeared!");
-            evaluated = !node.executed;
 
             // Either evaluate the node or grab its current output value (-> dont re-evaluate and waste resources)
-            out = if node.executed {
+            (!node.executed,
+            if node.executed {
                 node.output
             } else {
                 node.evaluate()
-            };
-        }
+            })
+        };
 
         // Only 'execute' recurring connections once (when the node got evaluated)
         if evaluated {
@@ -190,4 +192,12 @@ fn add_node() {
     assert_eq!(net.genome.len(), gene_count+2);
     assert_eq!(net.nodes.len(), node_count+1);
     assert!(net.nodes.get(6).is_some());
+}
+
+#[test]
+fn short_term_memory() {
+    let mut net = Network::new_empty(1, 1);
+    net.genome.push(Gene::random(0, 0, false));
+    let _ = net.evaluate(&vec![0.5]);
+    assert!(net.nodes[0].inputs.len() == 1);
 }
