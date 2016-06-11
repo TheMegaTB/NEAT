@@ -69,8 +69,7 @@ impl Network {
 
         let new_gene = Gene::with_weight(src, dest, false, weight);
 
-        // TODO: Use PartialEq instead of manually comparing the two genes (doesnt work because one is borrowed the other one not)
-        if match self.genome.iter_mut().find(|gene| gene.link.0 == new_gene.link.0 && gene.link.1 == new_gene.link.1) {
+        if match self.genome.iter_mut().find(|gene| gene == &&new_gene) {
             Some(gene) => {
                 gene.enable();
                 false
