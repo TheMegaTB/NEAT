@@ -1,5 +1,4 @@
 use rand::{thread_rng, Rng};
-
 use NID;
 use Float;
 use Link;
@@ -13,6 +12,16 @@ pub struct Gene {
     pub weight: Float,
     /// Endpoints of the link
     pub link: Link
+}
+
+impl PartialEq for Gene {
+    fn eq(&self, other: &Gene) -> bool {
+        self.link == other.link
+    }
+
+    fn ne(&self, other: &Gene) -> bool {
+        !self.eq(other)
+    }
 }
 
 impl Gene {

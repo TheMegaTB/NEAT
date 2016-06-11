@@ -1,3 +1,5 @@
+use rand::{thread_rng, Rng};
+
 use GID;
 use NID;
 use Node;
@@ -49,19 +51,35 @@ impl Network {
         }
     }
 
-    fn add_node(&mut self, gene_id: GID) -> Result<(), MutationError>{
+    fn add_connection(&mut self, src: NID, dest: NID, weight: Option<Float>) {
+        let weight = match weight {
+            Some(w) => w,
+            None => thread_rng().gen::<Float>()*2.0 - 1.0
+        };
+
+        let new_gene = Gene::with_weight(src, dest, false, weight);
+
+        if !self.genome.contains(&new_gene) {
+            self.genome.push(new_gene);
+        } else {
+            // TODO: Enable the already existing gene
+            // Which would require to find it...contains doesn't provide info on that sadly
+        }
+    }
+
+    fn add_node_in_gene(&mut self, gene_id: GID) -> Result<(), MutationError>{
         let (link, weight) = match self.genome.get_mut(gene_id) {
             Some(gene) => (gene.link, gene.weight),
             None => { return Err(MutationError::GeneNotExistent) }
         };
 
-        // Add link
+        // Add node
         let node_id = self.nodes.len();
         self.nodes.push(Node::new());
-        // Add node
-        self.genome.push(Gene::with_weight(link.0, node_id, false, 1.0));
-        self.genome.push(Gene::with_weight(node_id, link.1, false, weight));
-
+        // Add links
+        self.add_connection(link.0, node_id, Some(1.0));
+        self.add_connection(node_id, link.1, Some(weight));
+        // Disable old gene
         self.genome[gene_id].disable(); // No match required as the match at the beginning would have returned if the gene doesn't exist
         Ok(())
     }
@@ -159,6 +177,7 @@ impl Network {
             self.recursive_calc_node(*output_id)
         }).collect();
 
+        // Reset the 'executed' flag for all nodes
         for node in self.nodes.iter_mut() {
             node.reset();
         }
@@ -187,11 +206,21 @@ fn add_node() {
     let gene_count = net.genome.len();
     let node_count = net.nodes.len();
 
-    net.add_node(0).unwrap(); // Add a new node between node 0 (first input) and 5 (output)
+    net.add_node_in_gene(0).unwrap(); // Add a new node between node 0 (first input) and 5 (output)
 
     assert_eq!(net.genome.len(), gene_count+2);
     assert_eq!(net.nodes.len(), node_count+1);
     assert!(net.nodes.get(6).is_some());
+}
+
+#[test]
+fn dedup_genome() {
+    let mut net = Network::new_empty(5, 1);
+    let genome_length = net.genome.len();
+    net.add_connection(2, 2, None);
+    assert_eq!(net.genome.len(), genome_length+1);
+    net.add_connection(2, 2, None);
+    assert_eq!(net.genome.len(), genome_length+1);
 }
 
 #[test]
