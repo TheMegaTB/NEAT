@@ -4,7 +4,7 @@ use Float;
 use Link;
 
 /// Struct that represents a gene which in turn represents a connection/link inside a network
-#[derive(Debug)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Gene {
     /// Whether or not this gene has been disabled
     pub disabled: bool,

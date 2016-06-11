@@ -1,4 +1,5 @@
 use rand::{thread_rng, Rng};
+use rustc_serialize::json;
 
 use GID;
 use NID;
@@ -24,7 +25,7 @@ type Genome = Vec<Gene>;
 ///
 /// The nodes with the NIDs from 0 to x represent the inputs where x is the number of inputs
 /// The nodes with the NIDs from nodes.len()-x to nodes.len() represent the outputs where x is the number of outputs
-#[derive(Debug)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Network {
     /// HashMap that contains the genes and their respective GIDs
     genome: Genome,
@@ -34,7 +35,7 @@ pub struct Network {
     /// Amount of nodes starting from zero that are the inputs of the network
     inputs: usize,
     /// List of NIDs that are the outputs of the network
-    outputs: Vec<NID>,
+    outputs: Vec<NID>
 }
 
 impl Network {
@@ -49,6 +50,14 @@ impl Network {
             inputs: inputs,
             outputs: (inputs..inputs+outputs).collect()
         }
+    }
+
+    fn import(data: String) -> Result<Network, json::DecoderError> {
+        json::decode(&data)
+    }
+
+    fn export(&self) -> Result<String, json::EncoderError> {
+        json::encode(self)
     }
 
     fn add_connection(&mut self, src: NID, dest: NID, weight: Option<Float>) {
@@ -82,6 +91,10 @@ impl Network {
         // Disable old gene
         self.genome[gene_id].disable(); // No match required as the match at the beginning would have returned if the gene doesn't exist
         Ok(())
+    }
+
+    pub fn crossover(&self, other: &Network) -> Network {
+        unimplemented!()
     }
 
     /// Function to list all dependencies that are required for a node.

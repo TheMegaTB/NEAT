@@ -1,7 +1,7 @@
 use Float;
 
 /// Node inside a network that is just there to wrap around the sigmoid function and eventually other ones later
-#[derive(Debug)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Node {
     /// Flag to define whether or not the node has been executed (in the current 'round')
     pub executed: bool,
