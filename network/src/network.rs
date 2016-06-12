@@ -144,19 +144,9 @@ impl Network {
     }
 
     /// Function to list all dependencies that are required for a node.
-    ///
-    /// It returns two vectors where the first one consist of the GIDs of recurring connections (returning to the node itself)
-    /// The second vector is a list of GIDs that are non-recurring connections
-    fn get_node_dependencies(&self, node: NID) -> (Vec<GID>, Vec<GID>) {
-        self.genome.iter().enumerate().fold((Vec::new(), Vec::new()), |mut acc, (i, gene)| {
-            if gene.link.1 == node && !gene.disabled {
-                if gene.link.0 == gene.link.1 {
-                    acc.0.push(i);
-                } else {
-                    acc.1.push(i);
-                }
-            }
-
+    fn get_node_dependencies(&self, node: NID) -> Vec<GID> {
+        self.genome.iter().enumerate().fold(Vec::new(), |mut acc, (i, gene)| {
+            if gene.link.1 == node && !gene.disabled { acc.push(i) };
             acc
         })
     }
@@ -171,49 +161,45 @@ impl Network {
     }
 
     /// Calculate a node and all its dependencies
-    fn recursive_calc_node(&mut self, node_id: NID) -> Float {
+    fn recursive_calc_node(&mut self, node_id: NID, visited: &mut Vec<NID>) -> Float {
+
+        if visited.contains(&node_id) {
+            return self.nodes.get_mut(node_id).expect("Node disappeared!").output
+        }
+
+        visited.push(node_id);
+
         // Get the IDs of all connections this node depends on
         let dependencies = self.get_node_dependencies(node_id);
 
+
+
         // Check if there are any dependencies and prevent unnecessary calculations
-        if dependencies.1.len() > 0 {
+        if dependencies.len() > 0 {
             // Get all connections that this node depends on
-            let dependend_links = dependencies.1.iter().map(|gene_id| {
+            let dependend_links = dependencies.iter().map(|gene_id| {
                 self.genome.get(*gene_id).expect("Gene disappeared!").link
             }).collect::<Vec<_>>();
 
             // Calculate the values of the nodes that are on the other end of the connection
             for link in dependend_links.iter() {
-                self.recursive_calc_node(link.0); //TODO prevent infinite loop (3->4 and 4->3)
+                self.recursive_calc_node(link.0, visited); //TODO prevent infinite loop (3->4 and 4->3)
             }
 
             // Push the outputs through the genes (apply weights) and insert them into the target/current node
-            for (gene_id, link) in dependencies.1.iter().zip(dependend_links.iter()) {
+            for (gene_id, link) in dependencies.iter().zip(dependend_links.iter()) {
                 self.process_gene(*link, node_id, *gene_id);
             }
         }
 
-        let (evaluated, out) = {
-            let node = self.nodes.get_mut(node_id).expect("Node disappeared!");
+        let node = self.nodes.get_mut(node_id).expect("Node disappeared!");
 
-            // Either evaluate the node or grab its current output value (-> dont re-evaluate and waste resources)
-            (!node.executed,
-            if node.executed {
-                node.output
-            } else {
-                node.evaluate()
-            })
-        };
-
-        // Only 'execute' recurring connections once (when the node got evaluated)
-        if evaluated {
-            for recurring_gene_id in dependencies.0.iter() {
-                let link = self.genome.get(*recurring_gene_id).expect("Gene disappeared!").link;
-                self.process_gene(link, node_id, *recurring_gene_id);
-            }
+        // Either evaluate the node or grab its current output value (-> dont re-evaluate and waste resources)
+        if node.executed {
+            node.output
+        } else {
+            node.evaluate()
         }
-
-        out
     }
 
     /// Evaluate the network with some input data.
@@ -233,7 +219,7 @@ impl Network {
         // Recursively calculate the output nodes and all their dependencies
         let outputs = self.outputs.clone(); // This assumes that outputs is NEVER modified whilst this function runs
         let output_values = outputs.iter().map(|output_id| {
-            self.recursive_calc_node(*output_id)
+            self.recursive_calc_node(*output_id, &mut Vec::new())
         }).collect();
 
         // Reset the 'executed' flag for all nodes
