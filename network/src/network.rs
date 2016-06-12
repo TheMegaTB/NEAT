@@ -146,7 +146,9 @@ impl Network {
     /// Function to list all dependencies that are required for a node.
     fn get_node_dependencies(&self, node: NID) -> Vec<GID> {
         self.genome.iter().enumerate().fold(Vec::new(), |mut acc, (i, gene)| {
-            if gene.link.1 == node && !gene.disabled { acc.push(i) };
+            if gene.link.1 == node && !gene.disabled {
+                acc.push(i);
+            };
             acc
         })
     }
@@ -171,8 +173,6 @@ impl Network {
 
         // Get the IDs of all connections this node depends on
         let dependencies = self.get_node_dependencies(node_id);
-
-
 
         // Check if there are any dependencies and prevent unnecessary calculations
         if dependencies.len() > 0 {
@@ -292,11 +292,20 @@ fn reenabling_gene() {
 }
 
 #[test]
+fn persistent_results() {
+    let mut net = Network::new_empty(1, 1);
+    let res1 = net.evaluate(&vec![0.5]).unwrap();
+    let res2 = net.evaluate(&vec![0.5]).unwrap();
+    assert_eq!(res1, res2);
+}
+
+#[test]
 fn short_term_memory() {
     let mut net = Network::new_empty(1, 1);
     net.genome.push(Gene::random(0, 0, false));
-    let _ = net.evaluate(&vec![0.5]);
-    assert!(net.nodes[0].inputs.len() == 1);
+    let res1 = net.evaluate(&vec![0.5]).unwrap();
+    let res2 = net.evaluate(&vec![0.5]).unwrap();
+    assert!(res1 != res2);
 }
 
 #[test]
