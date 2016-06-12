@@ -22,11 +22,18 @@ pub const GENE_WEIGHT_MERGE_PROB: Float = 0.5;
 pub const GENE_DISABLE_MERGE_PROB: Float = 0.5;
 
 pub const GENE_MUT_RESET: Float = 0.1;
-pub const GENE_MUT_STRENGTH: Float = 0.1;
+pub const GENE_MUT_STRENGTH: Float = 0.3;
 
 // NETWORK
 pub const NETWORK_MUT_ADD_GENE: Float = 0.05;
 pub const NETWORK_MUT_ADD_NODE: Float = 0.03;
-pub const NETWORK_MUT_MUTATE_GENE: Float = 0.92;//0.8
+pub const NETWORK_MUT_MUTATE_GENE: Float = 0.92;
 // mutate node
 pub const NETWORK_MUT_CROSSOVER: Float = 0.75;
+
+
+// Speciation
+
+pub const C1: f64 = 1.0;
+pub const C2: f64 = 0.4;
+pub const DELTA_MAX: f64 = 1.0;

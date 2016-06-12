@@ -1,5 +1,6 @@
 use rand::{thread_rng, Rng};
 use rustc_serialize::json;
+use std::cmp::max;
 
 use {
     NETWORK_MUT_ADD_GENE,
@@ -11,7 +12,10 @@ use {
     Node,
     Gene,
     Float,
-    Link
+    Link,
+    C1,
+    C2,
+    DELTA_MAX
 };
 
 #[derive(Debug)]
@@ -95,11 +99,12 @@ impl Network {
         // Add node
         let node_id = self.nodes.len();
         self.nodes.push(Node::new());
-        // Add links
+
         self.add_connection(link.0, node_id, Some(1.0));
         self.add_connection(node_id, link.1, Some(weight));
-        // Disable old gene
+
         self.genome[gene_id].disable(); // No match required as the match at the beginning would have returned if the gene doesn't exist
+
         Ok(())
     }
 
@@ -122,25 +127,56 @@ impl Network {
         Ok(child)
     }
 
-    pub fn mutate(&mut self, other: &Network, self_is_fitter: bool) -> Option<Network> {
+    pub fn mutate(&mut self, other: &Network, self_is_fitter: bool) -> (u16, Option<Network>) {
         let mutation_index = thread_rng().gen::<Float>();
-        if mutation_index < NETWORK_MUT_ADD_GENE {
+        (if mutation_index < NETWORK_MUT_ADD_GENE {
             let src = thread_rng().gen_range(0, self.nodes.len());
             let dest = thread_rng().gen_range(0, self.nodes.len());
             self.add_connection(src, dest, None);
+            0
         } else if mutation_index < NETWORK_MUT_ADD_GENE + NETWORK_MUT_ADD_NODE {
             let gene_id = thread_rng().gen_range(0, self.genome.len());
             self.add_node_in_gene(gene_id).expect("Mutation: Gene vec broken!");
+            0
         } else if mutation_index < NETWORK_MUT_ADD_GENE + NETWORK_MUT_ADD_NODE + NETWORK_MUT_MUTATE_GENE {
             let gene_id = thread_rng().gen_range(0, self.genome.len());
             self.genome[gene_id].mutate();
+            0
         } else {
             // TODO mutate node
-        }
-
+            0
+        },
         if thread_rng().gen::<Float>() < NETWORK_MUT_CROSSOVER {
             Some(self.crossover(other, self_is_fitter).expect("Mutation: missmatching io size of network"))
-        } else { None }
+        } else { None })
+    }
+
+    pub fn get_weight_of(&self, other_gene: &Gene) -> Option<Float> {
+        for gene in self.genome.iter() {
+            if gene == other_gene {
+                return Some(gene.weight)
+            }
+        }
+
+        None
+    }
+
+    pub fn is_compatible_with(&self, other: &Network) -> bool {
+        let mut d = 0;
+        let mut w = 0.0;
+        let n = max(self.genome.len(), other.genome.len()) as f64;
+
+        for gene in self.genome.iter() {
+            match other.get_weight_of(gene) {
+                Some(weight) => w += (gene.weight - weight).abs(),
+                None => d += 1
+
+            }
+        }
+
+        w /= (self.genome.len() - d) as f64;
+
+        d as f64 * C1/n + w * C2 < DELTA_MAX
     }
 
     /// Function to list all dependencies that are required for a node.
@@ -148,7 +184,7 @@ impl Network {
         self.genome.iter().enumerate().fold(Vec::new(), |mut acc, (i, gene)| {
             if gene.link.1 == node && !gene.disabled {
                 acc.push(i);
-            };
+            }
             acc
         })
     }
@@ -191,12 +227,11 @@ impl Network {
                     self.process_gene(*link, node_id, *gene_id);
                 }
             }
-
             self.nodes.get_mut(node_id).expect("Node disappeared!").evaluate()
         }
     }
 
-    pub fn get_size(&self) -> (GID, NID) {
+    pub fn get_size(&self) -> (GID, NID, usize) {
         let non_disabled_genes = self.genome.iter().fold(0, |acc, gene| {
             if gene.disabled {
                 acc
@@ -204,7 +239,7 @@ impl Network {
                 acc + 1
             }
         });
-        (non_disabled_genes, self.nodes.len())
+        (non_disabled_genes, self.nodes.len(), self.get_node_dependencies(self.outputs[0]).len())
     }
 
     /// Evaluate the network with some input data.
@@ -218,12 +253,14 @@ impl Network {
         // Fill in all the inputs
         for input_id in 0..self.inputs {
             let input_node = self.nodes.get_mut(input_id).expect("Input node disappeared!");
-            input_node.inputs.push(inputs[input_id])
+            input_node.inputs.push(inputs[input_id]);
+            // input_node.output = inputs[input_id];
         }
 
         // Recursively calculate the output nodes and all their dependencies
         let outputs = self.outputs.clone(); // This assumes that outputs is NEVER modified whilst this function runs
         let output_values = outputs.iter().map(|output_id| {
+            // self.recursive_calc_node(*output_id)
             self.recursive_calc_node(*output_id, &mut Vec::new())
         }).collect();
 
@@ -238,11 +275,12 @@ impl Network {
     /// Reset the network fully by removing all remaining recurrent data and resetting all states.
     pub fn reset(&mut self) {
         for node in self.nodes.iter_mut() {
-            node.inputs.clear();
+            node.output = 0.0;
             node.reset();
         }
     }
 }
+
 
 #[test]
 fn dependency() {
@@ -253,6 +291,7 @@ fn dependency() {
 #[test]
 fn add_node() {
     let mut net = Network::new_empty(5, 1);
+    println!("{:?}", net);
     let gene_count = net.genome.len();
     let node_count = net.nodes.len();
 
@@ -319,4 +358,13 @@ fn recursive_evaluation() {
     let res = net.nodes[1].evaluate();
     net.nodes[1].reset();
     assert!(res != net.evaluate(&vec![0.5]).unwrap()[0]);
+}
+
+#[test]
+fn compatibility() {
+    let net1 = Network::new_empty(1, 1);
+    let net2 = Network::new_empty(1, 1);
+    let net3 = Network::new_empty(9, 8);
+    assert!(net1.is_compatible_with(&net2));
+    assert!(!net1.is_compatible_with(&net3));
 }

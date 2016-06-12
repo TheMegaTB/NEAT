@@ -3,8 +3,6 @@ extern crate neatwork;
 extern crate rand;
 extern crate time;
 
-use rand::{Rng, thread_rng};
-
 mod training_network;
 pub use training_network::TrainingNetwork;
 
@@ -17,55 +15,75 @@ pub use population::Population;
 mod trainer;
 pub use trainer::{Trainer, Score};
 
-const RUNS: u16 = 500;
+const RUNS: u16 = 10;
 
 fn main() {
     println!("Hello world!");
     let mut trainer = Trainer::new(3, 1, |net| {
-        let scores = (0..RUNS).fold(0.0, |acc, _| {
-            let mut rng = thread_rng();
-            let input = (rng.gen::<bool>() as u8, rng.gen::<bool>() as u8);
+        let scores = (0..RUNS).fold(0, |acc, i| {
+            let input = (i % 2, (i / 2) % 2);
             let target_result = input.0 ^ input.1;
-            let score = match net.evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
+            let score = match net.evaluate(&vec![input.0 as f64/10.0, input.1 as f64/10.0, 1.0]) {
                 Ok(result) => {
-                        acc + (result[0] - target_result as f64).abs()
+                        if (result[0] - target_result as f64).abs() < 0.5 {
+                            acc + 1
+
+                        } else { acc }
                 },
                 Err(_) => {
                     println!("error");
-                    0.0
+                    acc
                 }
             };
             net.network.reset();
             score
         });
-        // println!("{:?}", scores/ RUNS as f64);
-
-        // 1.0 / (scores / RUNS as f64 + 0.000000001)
-        -scores / RUNS as f64
+        scores as f64
     });
 
     let start_time = time::precise_time_s();
-    for i in 0..100 {
-        println!("{:?}: {:?}", i, trainer.next());
-    }
+    let mut i1 = 0;
+    loop {
+        i1 += 1;
+        println!("----------------------------------- GENERATION {} ----------------------------------- ", i1);
+        let net = trainer.get_best_network();
+        // println!("{:?}", trainer.next());
+        trainer.next();
+        trainer.population.species[0].networks.push(net);
+
+
+
 
     let mut net = trainer.get_best_network();
-    let correct_counter = (0..RUNS).fold(0, |acc, _| {
-        let mut rng = thread_rng();
-        let input = (rng.gen::<bool>() as u8, rng.gen::<bool>() as u8);
+
+
+
+
+    let scores = (0..RUNS).fold(0, |acc, i| {
+        // let mut rng = thread_rng();
+        let input =  (i % 2, (i / 2) % 2);  //(rng.gen::<bool>() as u8, rng.gen::<bool>() as u8);
         let target_result = input.0 ^ input.1;
-        let score = match net.evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
+        let score = match net.evaluate(&vec![input.0 as f64/10.0, input.1 as f64/10.0, 1.0]) {
             Ok(result) => {
-                println!("{:?} -> {}", if result[0] > 0.5 {1} else {0}, target_result);
-                if (result[0] - target_result as f64).abs() < 0.5 {
-                    acc + 1
-                } else { acc }
+                    if (result[0] - target_result as f64).abs() < 0.5 {
+                        // println!("{:?}", input);
+                        acc + 1
+                    } else {
+                        // println!("{:?}", input);
+                        acc
+                    }
+                    // acc + (result[0] - target_result as f64).abs()
             },
-            Err(_) => acc
+            Err(_) => {
+                println!("error");
+                acc
+            }
         };
-        net.reset();
+        net.network.reset();
         score
     });
-    println!("{:?} out of {:?} test ({}).", correct_counter, RUNS, correct_counter as f64/RUNS as f64);
+
+    println!("Result: {:?}", scores as f64 /RUNS as f64);
+}
     println!("The whole training took {} seconds.", time::precise_time_s() - start_time);
 }
