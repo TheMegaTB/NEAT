@@ -164,41 +164,34 @@ impl Network {
 
     /// Calculate a node and all its dependencies
     fn recursive_calc_node(&mut self, node_id: NID, visited: &mut Vec<NID>) -> Float {
-
-        if visited.contains(&node_id) {
-            return self.nodes.get_mut(node_id).expect("Node disappeared!").output
-        }
-
-        visited.push(node_id);
-
-        // Get the IDs of all connections this node depends on
-        let dependencies = self.get_node_dependencies(node_id);
-
-        // Check if there are any dependencies and prevent unnecessary calculations
-        if dependencies.len() > 0 {
-            // Get all connections that this node depends on
-            let dependend_links = dependencies.iter().map(|gene_id| {
-                self.genome.get(*gene_id).expect("Gene disappeared!").link
-            }).collect::<Vec<_>>();
-
-            // Calculate the values of the nodes that are on the other end of the connection
-            for link in dependend_links.iter() {
-                self.recursive_calc_node(link.0, visited); //TODO prevent infinite loop (3->4 and 4->3)
-            }
-
-            // Push the outputs through the genes (apply weights) and insert them into the target/current node
-            for (gene_id, link) in dependencies.iter().zip(dependend_links.iter()) {
-                self.process_gene(*link, node_id, *gene_id);
-            }
-        }
-
-        let node = self.nodes.get_mut(node_id).expect("Node disappeared!");
-
-        // Either evaluate the node or grab its current output value (-> dont re-evaluate and waste resources)
-        if node.executed {
-            node.output
+        let executed = self.nodes.get_mut(node_id).expect("Node disappeared!").executed;
+        if visited.contains(&node_id) || executed {
+            self.nodes.get_mut(node_id).expect("Node disappeared!").output
         } else {
-            node.evaluate()
+            visited.push(node_id);
+
+            // Get the IDs of all connections this node depends on
+            let dependencies = self.get_node_dependencies(node_id);
+
+            // Check if there are any dependencies and prevent unnecessary calculations
+            if dependencies.len() > 0 {
+                // Get all connections that this node depends on
+                let dependend_links = dependencies.iter().map(|gene_id| {
+                    self.genome.get(*gene_id).expect("Gene disappeared!").link
+                }).collect::<Vec<_>>();
+
+                // Calculate the values of the nodes that are on the other end of the connection
+                for link in dependend_links.iter() {
+                    self.recursive_calc_node(link.0, visited); //TODO prevent infinite loop (3->4 and 4->3)
+                }
+
+                // Push the outputs through the genes (apply weights) and insert them into the target/current node
+                for (gene_id, link) in dependencies.iter().zip(dependend_links.iter()) {
+                    self.process_gene(*link, node_id, *gene_id);
+                }
+            }
+
+            self.nodes.get_mut(node_id).expect("Node disappeared!").evaluate()
         }
     }
 
