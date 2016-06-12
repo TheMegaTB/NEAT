@@ -168,6 +168,7 @@ impl Network {
         if visited.contains(&node_id) || executed {
             self.nodes.get_mut(node_id).expect("Node disappeared!").output
         } else {
+            // Add node id to viseted nodes
             visited.push(node_id);
 
             // Get the IDs of all connections this node depends on
