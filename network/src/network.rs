@@ -196,6 +196,17 @@ impl Network {
         }
     }
 
+    pub fn get_size(&self) -> (GID, NID) {
+        let non_disabled_genes = self.genome.iter().fold(0, |acc, gene| {
+            if gene.disabled {
+                acc
+            } else {
+                acc + 1
+            }
+        });
+        (non_disabled_genes, self.nodes.len())
+    }
+
     /// Evaluate the network with some input data.
     ///
     /// This might eventually leave some remaining recurrent data in the network behind for the next evaluation.

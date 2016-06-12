@@ -25,8 +25,8 @@ pub const GENE_MUT_RESET: Float = 0.1;
 pub const GENE_MUT_STRENGTH: Float = 0.1;
 
 // NETWORK
-pub const NETWORK_MUT_ADD_GENE: Float = 0.4;
-pub const NETWORK_MUT_ADD_NODE: Float = 0.4;
-pub const NETWORK_MUT_MUTATE_GENE: Float = 0.2;
+pub const NETWORK_MUT_ADD_GENE: Float = 0.05;
+pub const NETWORK_MUT_ADD_NODE: Float = 0.03;
+pub const NETWORK_MUT_MUTATE_GENE: Float = 0.92;//0.8
 // mutate node
-pub const NETWORK_MUT_CROSSOVER: Float = 0.1;
+pub const NETWORK_MUT_CROSSOVER: Float = 0.75;
