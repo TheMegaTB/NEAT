@@ -42,14 +42,21 @@ fn main() {
     });
 
     let start_time = time::precise_time_s();
-    let mut i1 = 0;
-    loop {
-        i1 += 1;
+    // let mut i1 = 0;
+    for i1 in 0..100 {
+        // i1 += 1;
         println!("----------------------------------- GENERATION {} ----------------------------------- ", i1);
         let net = trainer.get_best_network();
-        // println!("{:?}", trainer.next());
-        trainer.next();
-        trainer.population.species[0].networks.push(net);
+        let stats = trainer.next();
+        // println!("{:?}", stats);
+        let species_amount = stats.unwrap().len();
+        let population_size = trainer.population.species.iter().fold(0, |acc, species| {
+            species.networks.len() + acc
+        });
+        println!("Amount of species: {:?}", species_amount);
+        println!("Size of population: {:?}", population_size);
+        println!("Average amount of networks per species: {}", population_size / species_amount);
+        // trainer.population.species[0].networks.push(net);
 
 
 

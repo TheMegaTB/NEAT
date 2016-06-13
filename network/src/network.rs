@@ -137,7 +137,7 @@ impl Network {
         } else if mutation_index < NETWORK_MUT_ADD_GENE + NETWORK_MUT_ADD_NODE {
             let gene_id = thread_rng().gen_range(0, self.genome.len());
             self.add_node_in_gene(gene_id).expect("Mutation: Gene vec broken!");
-            0
+            1
         } else if mutation_index < NETWORK_MUT_ADD_GENE + NETWORK_MUT_ADD_NODE + NETWORK_MUT_MUTATE_GENE {
             let gene_id = thread_rng().gen_range(0, self.genome.len());
             self.genome[gene_id].mutate();

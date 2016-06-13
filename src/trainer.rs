@@ -35,7 +35,6 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
     }
 
     pub fn get_stats(&mut self) -> Stats {
-
         (0..self.population.species.len()).fold(Vec::new(), |mut species_scores, species_id| {
             let species_size = self.population.species[species_id].networks.len();
             let score = (0..species_size).fold(0.0, |acc, net_id| {
@@ -114,16 +113,22 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
 
     pub fn speciation(&mut self) {
         let mut to_move = Vec::new();
+        let mut empty_species = Vec::new();
 
         for species_id in 0..self.population.species.len() {
             let species = &mut self.population.species[species_id];
-            if species.protection > 0 { species.protection -= 1; } else {
+            let protection_worn_out = species.protection == 1;
+            if species.protection > 0 { species.protection -= 1; }
+            if protection_worn_out || species.protection == 0 {
                 let species_size = species.networks.len();
-                for network_id in 1..species_size {
-                    if !species.networks[0].network.is_compatible_with(&species.networks[network_id].network) {
+                let mut moved_network_amount = 0;
+                for network_id in ( if protection_worn_out {0} else {1} )..species_size {
+                    if protection_worn_out || !species.networks[0].network.is_compatible_with(&species.networks[network_id].network) {
                         to_move.push((species_id, network_id));
+                        moved_network_amount+=1;
                     }
                 }
+                if moved_network_amount == species_size { empty_species.push(species_id); }
             }
         }
 
@@ -138,6 +143,10 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
                 }
             }
             self.population.species.push(Species::from(vec!(net)));
+        }
+
+        for species in empty_species.into_iter().rev() {
+            self.population.species.swap_remove(species);
         }
     }
 }

@@ -22,7 +22,7 @@ pub const GENE_WEIGHT_MERGE_PROB: Float = 0.5;
 pub const GENE_DISABLE_MERGE_PROB: Float = 0.5;
 
 pub const GENE_MUT_RESET: Float = 0.1;
-pub const GENE_MUT_STRENGTH: Float = 0.3;
+pub const GENE_MUT_STRENGTH: Float = 0.1; //100% = 1.0
 
 // NETWORK
 pub const NETWORK_MUT_ADD_GENE: Float = 0.05;
@@ -36,4 +36,4 @@ pub const NETWORK_MUT_CROSSOVER: Float = 0.75;
 
 pub const C1: f64 = 1.0;
 pub const C2: f64 = 0.4;
-pub const DELTA_MAX: f64 = 1.0;
+pub const DELTA_MAX: f64 = 5.0;
