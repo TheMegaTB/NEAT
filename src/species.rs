@@ -8,33 +8,33 @@ use trainer::Score;
 #[derive(Debug)]
 pub struct Species {
     pub networks: Vec<TrainingNetwork>,
-    score: Option<Score>
+    pub score: Score
 }
 
 impl Species {
     pub fn new() -> Species {
         Species {
             networks: Vec::new(),
-            score: None
+            score: 0.0
         }
     }
 
     pub fn from(networks: Vec<TrainingNetwork>) -> Species {
         Species {
             networks: networks,
-            score: None
+            score: 0.0
         }
     }
 
-    pub fn get_score(&mut self) -> Score {
-        match self.score {
-            Some(score) => score,
-            None => {
-                let score = self.networks.iter().fold(0.0, |acc, net| { acc + net.score.expect("No score there...") }) / self.networks.len() as Score;
-                self.score = Some(score);
-                score
-            }
+    // WARNING: This function only takes the scores of the networks it contains of. It DOES NOT calculate them.
+    //          Therefore this function requires you to call calculate_scores() on the parent trainer first.
+    pub fn calculate_score<F>(&mut self, eval_closure: &F) -> Score where F : Fn(&mut TrainingNetwork) -> Score {
+        for network in self.networks.iter_mut() {
+            network.calculate_score(eval_closure);
         }
+        let score = self.networks.iter().fold(0.0, |acc, net| { acc + net.score }) / self.networks.len() as Score;
+        self.score = score;
+        score
     }
 
     pub fn breed(&mut self, parameters: &TrainingParameters) -> TrainingNetwork {
@@ -53,17 +53,12 @@ impl Species {
 
     pub fn cull(&mut self, percentage: Probability) {
         self.networks.sort_by(|a, b| // Sort so that the net w/ the highest score is at index 0
-            b.score.expect("No score there...")
-                .partial_cmp(&a.score.expect("No score there...")).expect("F64 score comparison failed")
+            b.score.partial_cmp(&a.score).expect("F64 score comparison failed")
         );
 
         let mut resulting_size = (self.networks.len() as Probability * percentage) as usize;
         if resulting_size == 0 { resulting_size = 1 };
 
         self.networks.truncate(resulting_size);
-    }
-
-    pub fn reset(&mut self) {
-        self.score = None;
     }
 }

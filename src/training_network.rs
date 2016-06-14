@@ -7,7 +7,7 @@ use trainer::{Score, TrainingParameters, Probability};
 #[derive(Debug, Clone)]
 pub struct TrainingNetwork {
     pub network: Network,
-    pub score: Option<Score>,
+    pub score: Score,
     global_rank: usize
 }
 
@@ -15,7 +15,7 @@ impl TrainingNetwork {
     pub fn new(network: Network) -> TrainingNetwork {
         TrainingNetwork {
             network: network,
-            score: None,
+            score: 0.0,
             global_rank: 0
         }
     }
@@ -40,7 +40,7 @@ impl TrainingNetwork {
     pub fn is_compatible_with(&self, other: &TrainingNetwork) -> bool {
         const C1: f64 = 1.0;
         const C2: f64 = 0.4;
-        const DELTA_MAX: f64 = 5.0;
+        const DELTA_MAX: f64 = 3.0;
 
         let mut d = 0;
         let mut w = 0.0;
@@ -129,17 +129,10 @@ impl TrainingNetwork {
         }
     }
 
-
-    pub fn get_score<F>(&mut self, eval_closure: &F) -> Score where F : Fn(&mut TrainingNetwork) -> Score {
-        // let net = &mut self.species[network_id.0].networks[network_id.1];
-        match self.score {
-            Some(score) => score,
-            None => {
-                let score = (eval_closure)(self);
-                self.network.reset();
-                self.score = Some(score);
-                score
-            }
-        }
+    pub fn calculate_score<F>(&mut self, eval_closure: &F) -> Score where F : Fn(&mut TrainingNetwork) -> Score {
+        let score = (eval_closure)(self);
+        self.network.reset();
+        self.score = score;
+        score
     }
 }

@@ -108,7 +108,7 @@ impl Network {
         }
     }
 
-    pub fn get_size(&self) -> (GID, NID, usize) {
+    pub fn get_size(&self) -> (GID, NID) {
         let non_disabled_genes = self.genome.iter().fold(0, |acc, gene| {
             if gene.disabled {
                 acc
@@ -116,7 +116,7 @@ impl Network {
                 acc + 1
             }
         });
-        (non_disabled_genes, self.nodes.len(), self.get_node_dependencies(self.outputs[0]).len())
+        (non_disabled_genes, self.nodes.len())
     }
 
     /// Evaluate the network with some input data.

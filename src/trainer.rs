@@ -36,16 +36,25 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
         }
     }
 
+    fn calculate_scores(&mut self) {
+        for species in self.species.iter_mut() {
+            for network in species.networks.iter_mut() {
+                network.calculate_score(&self.eval_closure);
+            }
+        }
+    }
+
     pub fn get_best_network(&mut self) -> TrainingNetwork {
         let mut current_species_id = 0;
         let mut current_network_id = 0;
         let mut current_score = 0.0;
+        self.calculate_scores();
         for (species_id, species) in self.species.iter_mut().enumerate() {
             for (network_id, network) in species.networks.iter_mut().enumerate() {
-                if network.get_score(&self.eval_closure) > current_score {
+                if network.score > current_score {
                     current_species_id = species_id;
                     current_network_id = network_id;
-                    current_score = network.score.unwrap();
+                    current_score = network.score;
                 }
             }
         }
@@ -56,7 +65,8 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
         let total_average_score = self.get_total_avg_score();
         let mut dead_species_ids = Vec::new();
         for (species_id, species) in self.species.iter_mut().enumerate() {
-            let breed = species.get_score() / total_average_score * self.parameters.population_size as f64;
+            species.calculate_score(&self.eval_closure); // This is overkill. A re-estimation from all the net scores would be sufficient instead of a full re-evaluation of every network
+            let breed = species.score / total_average_score * self.parameters.population_size as f64;
             if breed < 1.0 {
                 dead_species_ids.push(species_id);
             }
@@ -69,7 +79,7 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
     fn get_total_avg_score(&mut self) -> Score {
         let mut total_average_score = 0.0;
         for species in self.species.iter_mut() {
-            total_average_score += species.get_score();
+            total_average_score += species.calculate_score(&self.eval_closure);
         }
         total_average_score
     }
@@ -86,19 +96,16 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
 
     fn next_generation(&mut self) {
         for species in self.species.iter_mut() {
-            species.reset();
-            for network in species.networks.iter_mut() {
-                network.get_score(&self.eval_closure);
-            }
+            species.calculate_score(&self.eval_closure); // Calculate it so that cull can use it
             species.cull(self.parameters.cull_percentage);
         };
-        self.delete_weak_species();
+        self.delete_weak_species(); // This recalculates the species scores implicitly
         let tas = self.get_total_avg_score();
         let mut children = Vec::new();
         {
             let parameters = &self.parameters;
             for species in self.species.iter_mut() {
-                let breed = (species.get_score() / tas * self.parameters.population_size as f64) as usize - 1;
+                let breed = (species.score / tas * self.parameters.population_size as f64) as usize - 1;
                 children.append(&mut (1..breed).map(|_| {
                     species.breed(parameters)
                 }).collect());
@@ -109,6 +116,8 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
         for child in children.into_iter() {
             self.add_to_population(child);
         }
+
+        // println!("Amount of species: {}", self.species.len());
     }
 }
 
