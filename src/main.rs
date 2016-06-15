@@ -29,7 +29,7 @@ fn main() {
             match net.reset_and_evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
                 Ok(result) => {
                         let tmp = (result[0] - target_result as f64).abs();
-                        acc - tmp.powi(6)
+                        acc - tmp.powi(2)
                 },
                 Err(_) => {
                     println!("error");
