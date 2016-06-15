@@ -9,7 +9,7 @@ const GENE_WEIGHT_MERGE_PROB: Float = 0.5;
 const GENE_DISABLE_MERGE_PROB: Float = 0.5;
 
 const GENE_MUT_RESET: Float = 0.1;
-const GENE_MUT_STRENGTH: Float = 0.3; //100% = 1.0
+const GENE_MUT_STRENGTH: Float = 0.5; //100% = 1.0
 
 /// Struct that represents a gene which in turn represents a connection/link inside a network
 #[derive(Debug, RustcDecodable, RustcEncodable, Clone)]
