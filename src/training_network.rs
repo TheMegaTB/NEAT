@@ -136,3 +136,51 @@ impl TrainingNetwork {
         score
     }
 }
+
+fn add_node() {
+    let mut net = TrainingNetwork::new(Network::new_empty(5, 1));
+    let gene_count = net.network.genome.len();
+    let node_count = net.network.nodes.len();
+
+    net.add_node_in_gene(0); // Add a new node between node 0 (first input) and 5 (output)
+
+    assert_eq!(net.network.genome.len(), gene_count+2);
+    assert_eq!(net.network.nodes.len(), node_count+1);
+    assert!(net.network.nodes.get(6).is_some());
+}
+
+#[test]
+#[should_panic]
+fn crossover_io_size_mismatch() {
+    let net1 = TrainingNetwork::new(Network::new_empty(5, 1));
+    let net2 = TrainingNetwork::new(Network::new_empty(5, 2));
+    net1.crossover(&net2, false);
+}
+
+#[test]
+fn compatibility() {
+    let net1 = TrainingNetwork::new(Network::new_empty(1, 1));
+    let net2 = TrainingNetwork::new(Network::new_empty(1, 1));
+    let net3 = TrainingNetwork::new(Network::new_empty(9, 8));
+    assert!(net1.is_compatible_with(&net2));
+    assert!(!net1.is_compatible_with(&net3));
+}
+
+#[test]
+fn dedup_genome() {
+    let mut net = TrainingNetwork::new(Network::new_empty(5, 1));
+    let genome_length = net.network.genome.len();
+    net.add_connection(2, 2, None);
+    assert_eq!(net.network.genome.len(), genome_length+1);
+    net.add_connection(2, 2, None);
+    assert_eq!(net.network.genome.len(), genome_length+1);
+}
+
+#[test]
+fn reenabling_gene() {
+    let mut net = TrainingNetwork::new(Network::new_empty(5, 1));
+    let link = net.network.genome[0].link;
+    net.network.genome[0].disable();
+    net.add_connection(link.0, link.1, None);
+    assert!(!net.network.genome[0].disabled);
+}

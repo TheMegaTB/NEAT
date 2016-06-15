@@ -165,53 +165,6 @@ fn dependency() {
     assert_eq!(net.get_node_dependencies(5), vec![0, 1, 2, 3, 4]);
 }
 
-// #[test]
-// fn add_node() {
-//     let mut net = Network::new_empty(5, 1);
-//     println!("{:?}", net);
-//     let gene_count = net.genome.len();
-//     let node_count = net.nodes.len();
-//
-//     net.add_node_in_gene(0).unwrap(); // Add a new node between node 0 (first input) and 5 (output)
-//
-//     assert_eq!(net.genome.len(), gene_count+2);
-//     assert_eq!(net.nodes.len(), node_count+1);
-//     assert!(net.nodes.get(6).is_some());
-// }
-//
-// #[test]
-// fn crossover_input_size_mismatch() {
-//     let net1 = Network::new_empty(5, 1);
-//     let net2 = Network::new_empty(6, 1);
-//     assert!(net1.crossover(&net2, false).is_err());
-// }
-//
-// #[test]
-// fn crossover_output_size_mismatch() {
-//     let net1 = Network::new_empty(5, 1);
-//     let net2 = Network::new_empty(5, 2);
-//     assert!(net1.crossover(&net2, false).is_err());
-// }
-//
-// #[test]
-// fn dedup_genome() {
-//     let mut net = Network::new_empty(5, 1);
-//     let genome_length = net.genome.len();
-//     net.add_connection(2, 2, None);
-//     assert_eq!(net.genome.len(), genome_length+1);
-//     net.add_connection(2, 2, None);
-//     assert_eq!(net.genome.len(), genome_length+1);
-// }
-//
-// #[test]
-// fn reenabling_gene() {
-//     let mut net = Network::new_empty(5, 1);
-//     let link = net.genome[0].link;
-//     net.genome[0].disable();
-//     net.add_connection(link.0, link.1, None);
-//     assert!(!net.genome[0].disabled);
-// }
-
 #[test]
 fn persistent_results() {
     let mut net = Network::new_empty(1, 1);
@@ -236,12 +189,3 @@ fn recursive_evaluation() {
     net.nodes[1].reset();
     assert!(res != net.evaluate(&vec![0.5]).unwrap()[0]);
 }
-
-// #[test]
-// fn compatibility() {
-//     let net1 = Network::new_empty(1, 1);
-//     let net2 = Network::new_empty(1, 1);
-//     let net3 = Network::new_empty(9, 8);
-//     assert!(net1.is_compatible_with(&net2));
-//     assert!(!net1.is_compatible_with(&net3));
-// }
