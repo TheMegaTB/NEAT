@@ -109,8 +109,6 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
             let child = child.calculate_score(&self.eval_closure);
             self.add_to_population(child);
         }
-
-        // println!("Amount of species: {}", self.species.len());
     }
 }
 

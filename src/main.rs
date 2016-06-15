@@ -48,7 +48,7 @@ fn main() {
     for i in 0..5000 {
         trainer.next();
         let mut net = trainer.get_best_network();
-        println!("Generation {}: {:?}", i, net.score);
+        // println!("Generation {}: {:?}", i, net.score);
         if net.score == 0.0 {
         // if i == 1999 {
             net.network.reset();

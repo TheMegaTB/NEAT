@@ -29,9 +29,8 @@ impl ScoredTrainingNetwork {
     pub fn is_compatible_with(&self, other: &ScoredTrainingNetwork) -> bool {
         const C1: f64 = 1.0;
         const C2: f64 = 0.4;
-        const DELTA_MAX: f64 = 1.4;
+        const DELTA_MAX: f64 = 3.0;
 
-        // Genome 1 > Genome 2 (in terms of size)
         let (net1, net2) = if self.network.genome.len() > other.network.genome.len() { (&self, &other) } else { (&other, &self) };
 
         let n = net1.network.genome.len() as f64;
@@ -42,6 +41,13 @@ impl ScoredTrainingNetwork {
                 None => d += 1
             };
             (d, w)
+        });
+
+        let d = net2.network.genome.iter().fold(d, |d, gene| {
+            match net1.get_weight_of(gene) {
+                Some(_) => d,
+                None => d + 1
+            }
         });
 
         w /= (net1.network.genome.len() - d) as f64;
