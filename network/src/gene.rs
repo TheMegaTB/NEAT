@@ -52,11 +52,8 @@ impl Gene {
     }
 
     pub fn merge(&mut self, other: &Gene) {
-        if thread_rng().gen::<Float>() > GENE_WEIGHT_MERGE_PROB {
+        if !other.disabled && thread_rng().gen::<Float>() > GENE_WEIGHT_MERGE_PROB {
             self.weight = other.weight;
-        }
-        if thread_rng().gen::<Float>() > GENE_DISABLE_MERGE_PROB {
-            self.disabled = other.disabled;
         }
     }
 
