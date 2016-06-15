@@ -26,7 +26,6 @@ fn main() {
         let scores = (0..runs).fold(0.0, |acc, i| {
             let input = (i % 2, (i / 2) % 2);
             let target_result = input.0 ^ input.1;
-            // net.network.reset();
             match net.reset_and_evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
                 Ok(result) => {
                         let tmp = (result[0] - target_result as f64).abs();
@@ -51,7 +50,6 @@ fn main() {
             let scores = (0..runs).fold(0.0, |acc, i| {
                 let input = ((i % 2), (i / 2) % 2);
                 let target_result = input.0 ^ input.1;
-                // net.network.reset();
                 match net.reset_and_evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
                     Ok(result) => {
                             println!("{:?} -> {} (guess: {} / {})", input, target_result, result[0].round(), result[0]);
@@ -65,11 +63,11 @@ fn main() {
                     }
                 }
             });
-            println!("Score: {:?} / {}", scores, runs);
+            println!("Score: {:?} for {} runs", scores, runs);
             let size = net.network.get_size();
             println!("Size: {} genes and {} nodes", size.0, size.1);
             println!(" WOHOOO IT LEARNED XOR!!!! (in generation {})", i);
-            // break
+            break
         }
     }
 }
