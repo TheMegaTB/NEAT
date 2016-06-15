@@ -139,7 +139,7 @@ impl UnscoredTrainingNetwork {
     }
 
     pub fn mutate(&mut self, parameters: &TrainingParameters) {
-        for _ in 0..5 {
+        for _ in 0..thread_rng().gen_range(1, 2) {
             if thread_rng().gen::<Probability>() < parameters.add_gene_probability {
                 let src = thread_rng().gen_range(0, self.network.nodes.len());
                 let dest = thread_rng().gen_range(0, self.network.nodes.len());

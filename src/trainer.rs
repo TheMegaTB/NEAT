@@ -2,7 +2,6 @@ use species::Species;
 use training_network::{UnscoredTrainingNetwork, ScoredTrainingNetwork};
 use neatwork::Network;
 
-const POPULATION_SIZE: usize = 150;
 pub type Score = f64;
 pub type Probability = f32;
 
