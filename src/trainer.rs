@@ -113,9 +113,9 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
 }
 
 impl<F> Iterator for Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
-    type Item = ();
+    type Item = usize;
     fn next(&mut self) -> Option<Self::Item> {
         self.next_generation();
-        Some(())
+        Some(self.species.len())
     }
 }

@@ -26,50 +26,42 @@ fn main() {
         let scores = (0..runs).fold(0.0, |acc, i| {
             let input = (i % 2, (i / 2) % 2);
             let target_result = input.0 ^ input.1;
-            let score = match net.evaluate(&vec![input.0 as f64/10.0, input.1 as f64/10.0, 1.0]) {
+            match net.reset_and_evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
                 Ok(result) => {
-                        // println!("{:?} -> {} (guess: {})", input, target_result, result[0]);
-                        // if (result[0] - target_result as f64).abs() < 0.5 {
-                        //     acc + 1
-                        // } else { acc }
-                        acc - (result[0] - target_result as f64).abs()
+                        let tmp = (result[0] - target_result as f64).abs();
+                        acc - tmp.powi(6)
                 },
                 Err(_) => {
                     println!("error");
                     acc
                 }
-            };
-            score
+            }
         });
-        net.network.reset();
-        scores as f64
+        scores
     });
 
-    for i in 0..5000 {
-        trainer.next();
+    for i in 0..10000 {
+        println!("{:?}", trainer.next());
         let mut net = trainer.get_best_network();
-        // println!("Generation {}: {:?}", i, net.score);
-        if net.score == 0.0 {
-        // if i == 1999 {
-            net.network.reset();
+        println!("Generation {}: {:?}", i, net.score);
+        // println!("{:?}, {:?}", net.network.genome.len(), net.network.nodes.len());
+
+        if i == 9999 {
             let scores = (0..runs).fold(0.0, |acc, i| {
-                let input = (i % 2, (i / 2) % 2);
+                let input = ((i % 2), (i / 2) % 2);
                 let target_result = input.0 ^ input.1;
-                let score = match net.evaluate(&vec![input.0 as f64/10.0, input.1 as f64/10.0, 1.0]) {
+                match net.reset_and_evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
                     Ok(result) => {
-                            println!("{:?} -> {} (guess: {})", input, target_result, result[0]);
+                            println!("{:?} -> {} (guess: {} / {})", input, target_result, result[0].round(), result[0]);
                             println!("dist: {:?}", (result[0] - target_result as f64).abs());
-                            // if (result[0] - target_result as f64).abs() < 0.5 {
-                            //     acc + 1
-                            // } else { acc }
-                            acc - (result[0] - target_result as f64).abs()
+                            let tmp = (result[0] - target_result as f64).abs();
+                            acc - tmp.powi(2)
                     },
                     Err(_) => {
                         println!("error");
                         acc
                     }
-                };
-                score
+                }
             });
             println!("Score: {:?} for {} runs", scores, runs);
             let size = net.network.get_size();
