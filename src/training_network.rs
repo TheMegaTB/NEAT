@@ -50,7 +50,6 @@ impl ScoredTrainingNetwork {
             }
         });
 
-        println!("{} - {}", net1.network.genome.len(), d);
         let tmp = (net1.network.genome.len().saturating_sub(d)) as f64;
         if tmp == 0.0 { return false } else {
             w /= tmp;
