@@ -26,8 +26,6 @@ impl Species {
         }
     }
 
-    // WARNING: This function only takes the scores of the networks it contains of. It DOES NOT calculate them.
-    //          Therefore this function requires you to call calculate_scores() on the parent trainer first.
     pub fn calculate_score<F>(&mut self, eval_closure: &F) -> Score where F : Fn(&mut TrainingNetwork) -> Score {
         for network in self.networks.iter_mut() {
             network.calculate_score(eval_closure);

@@ -127,6 +127,14 @@ impl TrainingNetwork {
             let gene_id = thread_rng().gen_range(0, self.network.genome.len());
             self.network.genome[gene_id].mutate();
         }
+        if thread_rng().gen::<Probability>() < parameters.gene_enable_probability {
+            let gene_id = thread_rng().gen_range(0, self.network.genome.len());
+            self.network.genome[gene_id].enable();
+        }
+        if thread_rng().gen::<Probability>() < parameters.gene_disable_probability {
+            let gene_id = thread_rng().gen_range(0, self.network.genome.len());
+            self.network.genome[gene_id].disable();
+        }
     }
 
     pub fn calculate_score<F>(&mut self, eval_closure: &F) -> Score where F : Fn(&mut TrainingNetwork) -> Score {

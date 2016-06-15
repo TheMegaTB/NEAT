@@ -96,7 +96,6 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
 
     fn next_generation(&mut self) {
         for species in self.species.iter_mut() {
-            species.calculate_score(&self.eval_closure); // Calculate it so that cull can use it
             species.cull(self.parameters.cull_percentage);
         };
         self.delete_weak_species(); // This recalculates the species scores implicitly
@@ -113,7 +112,8 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
             }
         }
         // insert random while loop here
-        for child in children.into_iter() {
+        for mut child in children.into_iter() {
+            child.calculate_score(&self.eval_closure);
             self.add_to_population(child);
         }
 
