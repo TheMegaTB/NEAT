@@ -22,6 +22,11 @@ impl ScoredTrainingNetwork {
         self.network.evaluate(inputs)
     }
 
+    pub fn reset_and_evaluate(&mut self, inputs: &Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
+        self.network.reset();
+        self.network.evaluate(inputs)
+    }
+
     pub fn is_compatible_with(&self, other: &ScoredTrainingNetwork) -> bool {
         const C1: f64 = 1.0;
         const C2: f64 = 0.4;
@@ -85,6 +90,11 @@ impl UnscoredTrainingNetwork {
         self.network.evaluate(inputs)
     }
 
+    pub fn reset_and_evaluate(&mut self, inputs: &Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
+        self.network.reset();
+        self.network.evaluate(inputs)
+    }
+
     fn add_connection(&mut self, src: NID, dest: NID, weight: Option<Float>) {
         let weight = match weight {
             Some(w) => w,
@@ -145,7 +155,6 @@ impl UnscoredTrainingNetwork {
 
     pub fn calculate_score<F>(mut self, eval_closure: &F) -> ScoredTrainingNetwork where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
         let score = (eval_closure)(&mut self);
-        self.network.reset();
         ScoredTrainingNetwork {
             network: self.network,
             score: score,
