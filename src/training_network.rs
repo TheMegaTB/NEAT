@@ -5,39 +5,24 @@ use neatwork::{Float, EvaluationError, Network, NID, GID, Gene, Node};
 use trainer::{Score, TrainingParameters, Probability};
 
 #[derive(Debug, Clone)]
-pub struct TrainingNetwork {
+pub struct ScoredTrainingNetwork {
     pub network: Network,
     pub score: Score,
     global_rank: usize
 }
 
-impl TrainingNetwork {
-    pub fn new(network: Network) -> TrainingNetwork {
-        TrainingNetwork {
-            network: network,
-            score: 0.0,
-            global_rank: 0
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct UnscoredTrainingNetwork {
+    pub network: Network
+}
 
+
+impl ScoredTrainingNetwork {
     pub fn evaluate(&mut self, inputs: &Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
         self.network.evaluate(inputs)
     }
 
-
-
-
-    pub fn get_weight_of(&self, other_gene: &Gene) -> Option<Float> {
-        for gene in self.network.genome.iter() {
-            if gene == other_gene {
-                return Some(gene.weight)
-            }
-        }
-
-        None
-    }
-
-    pub fn is_compatible_with(&self, other: &TrainingNetwork) -> bool {
+    pub fn is_compatible_with(&self, other: &ScoredTrainingNetwork) -> bool {
         const C1: f64 = 1.0;
         const C2: f64 = 0.4;
         const DELTA_MAX: f64 = 3.0;
@@ -57,6 +42,47 @@ impl TrainingNetwork {
         w /= (self.network.genome.len() - d) as f64;
 
         d as f64 * C1/n + w * C2 < DELTA_MAX
+    }
+
+    pub fn crossover(&self, other: &ScoredTrainingNetwork, self_is_fitter: bool) -> UnscoredTrainingNetwork {
+        if self.network.inputs != other.network.inputs || self.network.outputs.len() != other.network.outputs.len() {
+            panic!("IO Size mismatch on crossover")
+        }
+
+        let (mut child, other) = if self_is_fitter { (self.network.clone(), other) } else { (other.network.clone(), self) };
+
+        for gene in child.genome.iter_mut() {
+            match other.network.genome.iter().find(|other_gene| other_gene == &gene) {
+                Some(other_gene) => {
+                    gene.merge(other_gene)
+                },
+                None => {}
+            }
+        }
+
+        UnscoredTrainingNetwork::new(child)
+    }
+
+    pub fn get_weight_of(&self, other_gene: &Gene) -> Option<Float> {
+        for gene in self.network.genome.iter() {
+            if gene == other_gene {
+                return Some(gene.weight)
+            }
+        }
+
+        None
+    }
+}
+
+impl UnscoredTrainingNetwork {
+    pub fn new(network: Network) -> UnscoredTrainingNetwork {
+        UnscoredTrainingNetwork {
+            network: network
+        }
+    }
+
+    pub fn evaluate(&mut self, inputs: &Vec<Float>) -> Result<Vec<Float>, EvaluationError> {
+        self.network.evaluate(inputs)
     }
 
     fn add_connection(&mut self, src: NID, dest: NID, weight: Option<Float>) {
@@ -93,26 +119,6 @@ impl TrainingNetwork {
         self.network.genome[gene_id].disable();
     }
 
-
-    pub fn crossover(&self, other: &TrainingNetwork, self_is_fitter: bool) -> TrainingNetwork {
-        if self.network.inputs != other.network.inputs || self.network.outputs.len() != other.network.outputs.len() {
-            panic!("IO Size mismatch on crossover")
-        }
-
-        let (mut child, other) = if self_is_fitter { (self.network.clone(), other) } else { (other.network.clone(), self) };
-
-        for gene in child.genome.iter_mut() {
-            match other.network.genome.iter().find(|other_gene| other_gene == &gene) {
-                Some(other_gene) => {
-                    gene.merge(other_gene)
-                },
-                None => {}
-            }
-        }
-
-        TrainingNetwork::new(child)
-    }
-
     pub fn mutate(&mut self, parameters: &TrainingParameters) {
         if thread_rng().gen::<Probability>() < parameters.add_gene_probability {
             let src = thread_rng().gen_range(0, self.network.nodes.len());
@@ -137,16 +143,19 @@ impl TrainingNetwork {
         }
     }
 
-    pub fn calculate_score<F>(&mut self, eval_closure: &F) -> Score where F : Fn(&mut TrainingNetwork) -> Score {
-        let score = (eval_closure)(self);
+    pub fn calculate_score<F>(mut self, eval_closure: &F) -> ScoredTrainingNetwork where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
+        let score = (eval_closure)(&mut self);
         self.network.reset();
-        self.score = score;
-        score
+        ScoredTrainingNetwork {
+            network: self.network,
+            score: score,
+            global_rank: 0
+        }
     }
 }
 
 fn add_node() {
-    let mut net = TrainingNetwork::new(Network::new_empty(5, 1));
+    let mut net = UnscoredTrainingNetwork::new(Network::new_empty(5, 1));
     let gene_count = net.network.genome.len();
     let node_count = net.network.nodes.len();
 
@@ -160,23 +169,23 @@ fn add_node() {
 #[test]
 #[should_panic]
 fn crossover_io_size_mismatch() {
-    let net1 = TrainingNetwork::new(Network::new_empty(5, 1));
-    let net2 = TrainingNetwork::new(Network::new_empty(5, 2));
+    let net1 = UnscoredTrainingNetwork::new(Network::new_empty(5, 1)).calculate_score(&(|_| 0.0));
+    let net2 = UnscoredTrainingNetwork::new(Network::new_empty(5, 2)).calculate_score(&(|_| 0.0));
     net1.crossover(&net2, false);
 }
 
 #[test]
 fn compatibility() {
-    let net1 = TrainingNetwork::new(Network::new_empty(1, 1));
-    let net2 = TrainingNetwork::new(Network::new_empty(1, 1));
-    let net3 = TrainingNetwork::new(Network::new_empty(9, 8));
+    let net1 = UnscoredTrainingNetwork::new(Network::new_empty(1, 1)).calculate_score(&(|_| 0.0));
+    let net2 = UnscoredTrainingNetwork::new(Network::new_empty(1, 1)).calculate_score(&(|_| 0.0));
+    let net3 = UnscoredTrainingNetwork::new(Network::new_empty(9, 8)).calculate_score(&(|_| 0.0));
     assert!(net1.is_compatible_with(&net2));
     assert!(!net1.is_compatible_with(&net3));
 }
 
 #[test]
 fn dedup_genome() {
-    let mut net = TrainingNetwork::new(Network::new_empty(5, 1));
+    let mut net = UnscoredTrainingNetwork::new(Network::new_empty(5, 1));
     let genome_length = net.network.genome.len();
     net.add_connection(2, 2, None);
     assert_eq!(net.network.genome.len(), genome_length+1);
@@ -186,7 +195,7 @@ fn dedup_genome() {
 
 #[test]
 fn reenabling_gene() {
-    let mut net = TrainingNetwork::new(Network::new_empty(5, 1));
+    let mut net = UnscoredTrainingNetwork::new(Network::new_empty(5, 1));
     let link = net.network.genome[0].link;
     net.network.genome[0].disable();
     net.add_connection(link.0, link.1, None);

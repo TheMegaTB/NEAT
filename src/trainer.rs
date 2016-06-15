@@ -1,5 +1,5 @@
 use species::Species;
-use training_network::TrainingNetwork;
+use training_network::{UnscoredTrainingNetwork, ScoredTrainingNetwork};
 use neatwork::Network;
 
 const POPULATION_SIZE: usize = 150;
@@ -17,18 +17,19 @@ pub struct TrainingParameters {
     pub gene_disable_probability: Probability
 }
 
-pub struct Trainer<F> where F: Fn(&mut TrainingNetwork) -> Score {
+pub struct Trainer<F> where F: Fn(&mut UnscoredTrainingNetwork) -> Score {
     parameters: TrainingParameters,
     species: Vec<Species>,
     eval_closure: F
 }
 
-impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
+impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
     pub fn new(parameters: TrainingParameters, inputs: usize, outputs: usize, closure: F) -> Trainer<F> {
         Trainer {
             species: vec![Species::from(
                 (0..parameters.population_size).map(|_| {
-                    TrainingNetwork::new(Network::new_empty(inputs, outputs))
+                    let net = UnscoredTrainingNetwork::new(Network::new_empty(inputs, outputs));
+                    net.calculate_score(&closure)
                 }).collect()
             )],
             parameters: parameters,
@@ -36,19 +37,10 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
         }
     }
 
-    fn calculate_scores(&mut self) {
-        for species in self.species.iter_mut() {
-            for network in species.networks.iter_mut() {
-                network.calculate_score(&self.eval_closure);
-            }
-        }
-    }
-
-    pub fn get_best_network(&mut self) -> TrainingNetwork {
+    pub fn get_best_network(&mut self) -> ScoredTrainingNetwork {
         let mut current_species_id = 0;
         let mut current_network_id = 0;
         let mut current_score = 0.0;
-        self.calculate_scores();
         for (species_id, species) in self.species.iter_mut().enumerate() {
             for (network_id, network) in species.networks.iter_mut().enumerate() {
                 if network.score > current_score {
@@ -65,7 +57,7 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
         let total_average_score = self.get_total_avg_score();
         let mut dead_species_ids = Vec::new();
         for (species_id, species) in self.species.iter_mut().enumerate() {
-            species.calculate_score(&self.eval_closure); // This is overkill. A re-estimation from all the net scores would be sufficient instead of a full re-evaluation of every network
+            species.calculate_score(); // This is overkill. A re-estimation from all the net scores would be sufficient instead of a full re-evaluation of every network
             let breed = species.score / total_average_score * self.parameters.population_size as f64;
             if breed < 1.0 {
                 dead_species_ids.push(species_id);
@@ -79,12 +71,12 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
     fn get_total_avg_score(&mut self) -> Score {
         let mut total_average_score = 0.0;
         for species in self.species.iter_mut() {
-            total_average_score += species.calculate_score(&self.eval_closure);
+            total_average_score += species.calculate_score();
         }
         total_average_score
     }
 
-    fn add_to_population(&mut self, child: TrainingNetwork) {
+    fn add_to_population(&mut self, child: ScoredTrainingNetwork) {
         for species in self.species.iter_mut() {
             if species.networks[0].is_compatible_with(&child) {
                 species.networks.push(child);
@@ -112,8 +104,8 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
             }
         }
         // insert random while loop here
-        for mut child in children.into_iter() {
-            child.calculate_score(&self.eval_closure);
+        for child in children.into_iter() {
+            let child = child.calculate_score(&self.eval_closure);
             self.add_to_population(child);
         }
 
@@ -121,7 +113,7 @@ impl<F> Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
     }
 }
 
-impl<F> Iterator for Trainer<F> where F : Fn(&mut TrainingNetwork) -> Score {
+impl<F> Iterator for Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
     type Item = ();
     fn next(&mut self) -> Option<Self::Item> {
         self.next_generation();

@@ -55,7 +55,7 @@ fn main() {
             let scores = (0..runs).fold(0.0, |acc, i| {
                 let input = (i % 2, (i / 2) % 2);
                 let target_result = input.0 ^ input.1;
-                let score = match net.evaluate(&vec![input.0 as f64/10.0, input.1 as f64/10.0, 1.0]) {
+                let score = match net.network.evaluate(&vec![input.0 as f64/10.0, input.1 as f64/10.0, 1.0]) {
                     Ok(result) => {
                             println!("{:?} -> {} (guess: {})", input, target_result, result[0]);
                             println!("dist: {:?}", (result[0] - target_result as f64).abs());
