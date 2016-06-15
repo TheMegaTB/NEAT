@@ -50,7 +50,11 @@ impl ScoredTrainingNetwork {
             }
         });
 
-        w /= (net1.network.genome.len() - d) as f64;
+        println!("{} - {}", net1.network.genome.len(), d);
+        let tmp = (net1.network.genome.len().saturating_sub(d)) as f64;
+        if tmp == 0.0 { return false } else {
+            w /= tmp;
+        }
 
         d as f64 * C1/n + w * C2 < DELTA_MAX
     }
