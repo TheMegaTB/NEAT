@@ -1,3 +1,5 @@
+use rand::{thread_rng, Rng};
+
 use species::Species;
 use training_network::{UnscoredTrainingNetwork, ScoredTrainingNetwork};
 use neatwork::Network;
@@ -14,7 +16,8 @@ pub struct TrainingParameters {
     pub add_node_probability: Probability,
     pub mutate_gene_probability: Probability,
     pub gene_enable_probability: Probability,
-    pub gene_disable_probability: Probability
+    pub gene_disable_probability: Probability,
+    pub staleness_maximum: usize
 }
 
 pub struct Trainer<F> where F: Fn(&mut UnscoredTrainingNetwork) -> Score {
@@ -68,6 +71,26 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
         }
     }
 
+    fn delete_stale_species(&mut self) {
+        let global_top_score = self.get_best_network().score;
+        let mut dead_species = Vec::new();
+        for (sid, species) in self.species.iter_mut().enumerate() {
+            species.sort(false); // Sort ascending
+            if species.networks.len() > 1 && species.networks[1].score > species.top_score {
+                species.top_score = species.networks[1].score;
+                species.staleness = 0;
+            } else {
+                species.staleness += 1;
+            }
+            if species.staleness > self.parameters.staleness_maximum && species.top_score < global_top_score {
+                dead_species.push(sid);
+            }
+        }
+        for species_id in dead_species {
+            self.species.swap_remove(species_id);
+        }
+    }
+
     fn get_total_avg_score(&mut self) -> Score {
         let mut total_average_score = 0.0;
         for species in self.species.iter_mut() {
@@ -86,9 +109,13 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
         self.species.push(Species::from(vec!(child)));
     }
 
+    fn get_current_population_size(&self) -> usize {
+        self.species.iter().fold(0, |acc, species| { acc + species.networks.len() })
+    }
+
     fn next_generation(&mut self) {
+        self.delete_stale_species();
         for species in self.species.iter_mut() {
-            // remove stale species
             species.cull(self.parameters.cull_percentage);
         }
         self.delete_weak_species(); // This recalculates the species scores implicitly
@@ -104,7 +131,10 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
                 species.cull(0.0);
             }
         }
-        // insert random while loop here
+        while children.len() + self.get_current_population_size() < self.parameters.population_size {
+            let species = &self.species[thread_rng().gen_range(0, self.species.len())];
+            children.push(species.breed(&self.parameters));
+        }
         for child in children.into_iter() {
             let child = child.calculate_score(&self.eval_closure);
             self.add_to_population(child);

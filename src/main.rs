@@ -19,7 +19,8 @@ fn main() {
         add_node_probability: 0.05,
         mutate_gene_probability: 0.9,
         gene_enable_probability: 0.4,
-        gene_disable_probability: 0.2
+        gene_disable_probability: 0.2,
+        staleness_maximum: 15
     };
 
     let mut trainer = Trainer::new(parameters, 3, 1, |net| {
