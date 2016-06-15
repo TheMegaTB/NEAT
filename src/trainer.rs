@@ -4,7 +4,6 @@ use species::Species;
 use training_network::{UnscoredTrainingNetwork, ScoredTrainingNetwork};
 use neatwork::Network;
 
-const POPULATION_SIZE: usize = 150;
 pub type Score = f64;
 pub type Probability = f32;
 
@@ -143,9 +142,9 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
 }
 
 impl<F> Iterator for Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
-    type Item = usize;
+    type Item = (usize, usize);
     fn next(&mut self) -> Option<Self::Item> {
         self.next_generation();
-        Some(self.species.len())
+        Some((self.species.len(), 0))
     }
 }

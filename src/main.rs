@@ -12,7 +12,7 @@ fn main() {
     println!("Hello world!");
     let runs = 4;
     let parameters = TrainingParameters {
-        population_size: 150,
+        population_size: 15,
         cull_percentage: 0.5,
         crossover_probability: 0.75,
         add_gene_probability: 0.03,
@@ -30,7 +30,7 @@ fn main() {
             match net.reset_and_evaluate(&vec![input.0 as f64, input.1 as f64, 1.0]) {
                 Ok(result) => {
                         let tmp = (result[0] - target_result as f64).abs();
-                        acc - tmp.powi(6)
+                        acc - tmp.powi(3)
                 },
                 Err(_) => {
                     println!("error");
@@ -41,13 +41,13 @@ fn main() {
         scores
     });
 
-    for i in 0..10000 {
+    for i in 0..5000 {
         println!("{:?}", trainer.next());
         let mut net = trainer.get_best_network();
         println!("Generation {}: {:?}", i, net.score);
         // println!("{:?}, {:?}", net.network.genome.len(), net.network.nodes.len());
 
-        if i == 9999 {
+        if i == 4999 {
             let scores = (0..runs).fold(0.0, |acc, i| {
                 let input = ((i % 2), (i / 2) % 2);
                 let target_result = input.0 ^ input.1;

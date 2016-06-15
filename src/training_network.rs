@@ -139,26 +139,28 @@ impl UnscoredTrainingNetwork {
     }
 
     pub fn mutate(&mut self, parameters: &TrainingParameters) {
-        if thread_rng().gen::<Probability>() < parameters.add_gene_probability {
-            let src = thread_rng().gen_range(0, self.network.nodes.len());
-            let dest = thread_rng().gen_range(0, self.network.nodes.len());
-            self.add_connection(src, dest, None);
-        }
-        if thread_rng().gen::<Probability>() < parameters.add_node_probability {
-            let gene_id = thread_rng().gen_range(0, self.network.genome.len());
-            self.add_node_in_gene(gene_id);
-        }
-        if thread_rng().gen::<Probability>() < parameters.mutate_gene_probability {
-            let gene_id = thread_rng().gen_range(0, self.network.genome.len());
-            self.network.genome[gene_id].mutate();
-        }
-        if thread_rng().gen::<Probability>() < parameters.gene_enable_probability {
-            let gene_id = thread_rng().gen_range(0, self.network.genome.len());
-            self.network.genome[gene_id].enable();
-        }
-        if thread_rng().gen::<Probability>() < parameters.gene_disable_probability {
-            let gene_id = thread_rng().gen_range(0, self.network.genome.len());
-            self.network.genome[gene_id].disable();
+        for _ in 0..thread_rng().gen_range(1, 2) {
+            if thread_rng().gen::<Probability>() < parameters.add_gene_probability {
+                let src = thread_rng().gen_range(0, self.network.nodes.len());
+                let dest = thread_rng().gen_range(0, self.network.nodes.len());
+                self.add_connection(src, dest, None);
+            }
+            if thread_rng().gen::<Probability>() < parameters.add_node_probability {
+                let gene_id = thread_rng().gen_range(0, self.network.genome.len());
+                self.add_node_in_gene(gene_id);
+            }
+            if thread_rng().gen::<Probability>() < parameters.mutate_gene_probability {
+                let gene_id = thread_rng().gen_range(0, self.network.genome.len());
+                self.network.genome[gene_id].mutate();
+            }
+            if thread_rng().gen::<Probability>() < parameters.gene_enable_probability {
+                let gene_id = thread_rng().gen_range(0, self.network.genome.len());
+                self.network.genome[gene_id].enable();
+            }
+            if thread_rng().gen::<Probability>() < parameters.gene_disable_probability {
+                let gene_id = thread_rng().gen_range(0, self.network.genome.len());
+                self.network.genome[gene_id].disable();
+            }
         }
     }
 
