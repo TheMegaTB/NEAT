@@ -1,4 +1,3 @@
-use std::cmp::max;
 use rand::{thread_rng, Rng};
 
 use neatwork::{Float, EvaluationError, Network, NID, GID, Gene, Node};
@@ -25,21 +24,22 @@ impl ScoredTrainingNetwork {
     pub fn is_compatible_with(&self, other: &ScoredTrainingNetwork) -> bool {
         const C1: f64 = 1.0;
         const C2: f64 = 0.4;
-        const DELTA_MAX: f64 = 3.0;
+        const DELTA_MAX: f64 = 1.4;
 
-        let mut d = 0;
-        let mut w = 0.0;
-        let n = max(self.network.genome.len(), other.network.genome.len()) as f64;
+        // Genome 1 > Genome 2 (in terms of size)
+        let (net1, net2) = if self.network.genome.len() > other.network.genome.len() { (&self, &other) } else { (&other, &self) };
 
-        for gene in self.network.genome.iter() {
-            match other.get_weight_of(gene) {
+        let n = net1.network.genome.len() as f64;
+
+        let (d, mut w) = net1.network.genome.iter().fold((0, 0.0), |(mut d, mut w), gene| {
+            match net2.get_weight_of(gene) {
                 Some(weight) => w += (gene.weight - weight).abs(),
                 None => d += 1
+            };
+            (d, w)
+        });
 
-            }
-        }
-
-        w /= (self.network.genome.len() - d) as f64;
+        w /= (net1.network.genome.len() - d) as f64;
 
         d as f64 * C1/n + w * C2 < DELTA_MAX
     }

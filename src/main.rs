@@ -39,18 +39,19 @@ fn main() {
                     acc
                 }
             };
-            net.network.reset();
+            // net.network.reset();
             score
         });
+        net.network.reset();
         scores as f64
     });
 
-    for i in 0..2000 {
+    for i in 0..5000 {
         trainer.next();
         let mut net = trainer.get_best_network();
         println!("Generation {}: {:?}", i, net.score);
-        // if net.score > -1.0 {
-        if i == 1999 {
+        if net.score == 0.0 {
+        // if i == 1999 {
             net.network.reset();
             let scores = (0..runs).fold(0.0, |acc, i| {
                 let input = (i % 2, (i / 2) % 2);
@@ -69,13 +70,13 @@ fn main() {
                         acc
                     }
                 };
-                net.network.reset();
+                // net.network.reset();
                 score
             });
-            println!("Score: {:?} / {}", scores, runs);
+            println!("Score: {:?} for {} runs", scores, runs);
             let size = net.network.get_size();
             println!("Size: {} genes and {} nodes", size.0, size.1);
-            println!(" WOHOOO IT LEARNED XOR!!!! (in generation {})", i);
+            // println!(" WOHOOO IT LEARNED XOR!!!! (in generation {})", i);
             break
         }
     }

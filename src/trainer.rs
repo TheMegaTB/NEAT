@@ -88,8 +88,9 @@ impl<F> Trainer<F> where F : Fn(&mut UnscoredTrainingNetwork) -> Score {
 
     fn next_generation(&mut self) {
         for species in self.species.iter_mut() {
+            // remove stale species
             species.cull(self.parameters.cull_percentage);
-        };
+        }
         self.delete_weak_species(); // This recalculates the species scores implicitly
         let tas = self.get_total_avg_score();
         let mut children = Vec::new();
