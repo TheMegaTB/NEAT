@@ -21,7 +21,7 @@ pub struct TrainingParameters {
 
 pub struct Trainer<F> where F: Fn(&mut UnscoredTrainingNetwork) -> Score {
     parameters: TrainingParameters,
-    species: Vec<Species>,
+    pub species: Vec<Species>,
     eval_closure: F
 }
 

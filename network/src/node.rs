@@ -36,7 +36,8 @@ impl Node {
             });
             self.executed = true;
             self.inputs.clear();
-            self.output = steep_sigmoid(input_sum);
+            // self.output = steep_sigmoid(input_sum);
+            self.output = relu(input_sum);
         }
         self.output
     }
@@ -45,6 +46,10 @@ impl Node {
     pub fn reset(&mut self) {
         self.executed = false;
     }
+}
+
+fn relu(x: Float) -> Float {
+    if x > 0.0 { x } else { 0.0 }
 }
 
 /// Steepened sigmoid function

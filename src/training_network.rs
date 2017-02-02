@@ -29,7 +29,7 @@ impl ScoredTrainingNetwork {
     pub fn is_compatible_with(&self, other: &ScoredTrainingNetwork) -> bool {
         const C1: f64 = 1.0;
         const C2: f64 = 0.4;
-        const DELTA_MAX: f64 = 3.0;
+        const DELTA_MAX: f64 = 10.0;//3.0;
 
         let (net1, net2) = if self.network.genome.len() > other.network.genome.len() { (&self, &other) } else { (&other, &self) };
 
